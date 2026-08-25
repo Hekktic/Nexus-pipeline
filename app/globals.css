@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body {
+    @apply bg-slate-950 text-slate-100 antialiased;
+  }
+}
+
+@layer components {
+  /* Shared form control, lifted out of the prototype's inline <style> blocks. */
+  .input {
+    @apply w-full rounded-md border border-slate-700 bg-slate-950 px-2.5 py-2 text-sm text-white;
+  }
+  .input:focus {
+    @apply border-amber-500 outline-none;
+  }
+  .input::placeholder {
+    @apply text-slate-500;
+  }
+  .input:disabled {
+    @apply cursor-not-allowed opacity-60;
+  }
+
+  .input-sm {
+    @apply rounded-md border border-slate-700 bg-slate-950 px-2 py-1.5 text-[13px] text-white;
+  }
+  .input-sm:focus {
+    @apply border-amber-500 outline-none;
+  }
+  .input-sm::placeholder {
+    @apply text-slate-500;
+  }
+}
