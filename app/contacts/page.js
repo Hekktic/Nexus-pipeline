@@ -7,7 +7,13 @@ import { hasSupabaseEnv } from "@/lib/supabase/env";
 
 export const dynamic = "force-dynamic";
 
-export default async function PipelinePage() {
+/**
+ * Same brands+creators+call_logs fetch as /pipeline — this is the general
+ * "everything, searchable" view. /pipeline becomes the dedicated deals
+ * board in a later phase; until then the two pages intentionally show the
+ * same data.
+ */
+export default async function ContactsPage() {
   if (!hasSupabaseEnv) return <CenteredScreen><SetupNotice /></CenteredScreen>;
 
   const supabase = createClient();
@@ -25,9 +31,9 @@ export default async function PipelinePage() {
 
   if (error) {
     return (
-      <AppShell active="/pipeline" subtitle="Every brand and creator">
+      <AppShell subtitle="Every brand and creator">
         <p className="text-sm text-red-400">
-          Couldn&apos;t load the pipeline: {error.message}
+          Couldn&apos;t load contacts: {error.message}
         </p>
       </AppShell>
     );
@@ -54,7 +60,7 @@ export default async function PipelinePage() {
   ].sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
 
   return (
-    <AppShell active="/pipeline" subtitle="Every brand and creator">
+    <AppShell subtitle="Every brand and creator">
       <PipelineView entries={entries} />
     </AppShell>
   );

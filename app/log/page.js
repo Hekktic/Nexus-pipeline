@@ -1,4 +1,5 @@
 import AppShell from "@/components/AppShell";
+import CenteredScreen from "@/components/CenteredScreen";
 import LogForm from "@/components/LogForm";
 import SetupNotice from "@/components/SetupNotice";
 import { createClient } from "@/lib/supabase/server";
@@ -7,7 +8,7 @@ import { hasSupabaseEnv } from "@/lib/supabase/env";
 export const dynamic = "force-dynamic";
 
 export default async function LogPage() {
-  if (!hasSupabaseEnv) return <SetupNotice />;
+  if (!hasSupabaseEnv) return <CenteredScreen><SetupNotice /></CenteredScreen>;
 
   const supabase = createClient();
   const [{ data: brands }, { data: creators }] = await Promise.all([
