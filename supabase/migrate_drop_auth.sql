@@ -38,7 +38,22 @@ begin
 end $$;
 
 -- -----------------------------------------------------------------------------
--- 3. Drop the old uuid FK columns and rename the new ones into their place.
+-- 3. Drop the old RLS policies and turn RLS off before touching the columns
+--    they reference — the app now authenticates with the service role key
+--    only, which bypasses RLS regardless of policy state.
+-- -----------------------------------------------------------------------------
+drop policy if exists "entries readable by authenticated" on public.entries;
+drop policy if exists "loggers and closers can add entries" on public.entries;
+drop policy if exists "closers can update entries" on public.entries;
+drop policy if exists "admins can delete entries" on public.entries;
+drop policy if exists "call logs readable by authenticated" on public.call_logs;
+drop policy if exists "closers can add call logs" on public.call_logs;
+
+alter table public.entries   disable row level security;
+alter table public.call_logs disable row level security;
+
+-- -----------------------------------------------------------------------------
+-- 4. Drop the old uuid FK columns and rename the new ones into their place.
 -- -----------------------------------------------------------------------------
 alter table public.entries   drop column if exists logged_by;
 alter table public.entries   drop column if exists assigned_to;
@@ -50,23 +65,9 @@ alter table public.entries   rename column assigned_to_name to assigned_to;
 create index if not exists entries_assigned_to_idx on public.entries (assigned_to);
 
 -- -----------------------------------------------------------------------------
--- 4. Drop everything that only existed to support Supabase Auth.
+-- 5. Drop everything that only existed to support Supabase Auth.
 -- -----------------------------------------------------------------------------
 drop trigger if exists on_auth_user_created on auth.users;
 drop function if exists public.handle_new_user();
 drop function if exists public.user_role();
 drop table if exists public.profiles;
-
--- -----------------------------------------------------------------------------
--- 5. Turn RLS off — the app now authenticates with the service role key only,
---    which bypasses RLS regardless of policy state.
--- -----------------------------------------------------------------------------
-drop policy if exists "entries readable by authenticated" on public.entries;
-drop policy if exists "loggers and closers can add entries" on public.entries;
-drop policy if exists "closers can update entries" on public.entries;
-drop policy if exists "admins can delete entries" on public.entries;
-drop policy if exists "call logs readable by authenticated" on public.call_logs;
-drop policy if exists "closers can add call logs" on public.call_logs;
-
-alter table public.entries   disable row level security;
-alter table public.call_logs disable row level security;
