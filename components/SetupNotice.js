@@ -8,18 +8,19 @@ export default function SetupNotice() {
         <p className="text-xs text-slate-400">Finish setup to continue</p>
       </div>
       <div className="space-y-3 p-5 text-sm text-slate-300">
-        <p>Supabase credentials are missing. Create a file named</p>
+        <p>Required environment variables are missing. Create a file named</p>
         <pre className="overflow-x-auto rounded-md border border-slate-800 bg-slate-900 p-3 text-xs text-slate-200">
 {`.env.local
 
+APP_PASSWORD=choose-a-shared-password
 NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-public-key
-NEXT_PUBLIC_SITE_URL=http://localhost:3000`}
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key`}
         </pre>
         <p className="text-slate-400">
-          Both values are in the Supabase dashboard under{" "}
-          <span className="text-slate-200">Project Settings → API</span>. Restart
-          the dev server after saving.
+          The Supabase values are in the dashboard under{" "}
+          <span className="text-slate-200">Project Settings → API</span> — use the{" "}
+          <span className="text-slate-200">service_role</span> key, not the anon
+          key. Restart the dev server after saving.
         </p>
       </div>
     </div>

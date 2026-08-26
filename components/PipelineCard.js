@@ -4,16 +4,19 @@ import { useState, useTransition } from "react";
 import { ChevronDown, ChevronUp, Clock, UserCheck } from "lucide-react";
 import { addCallLog, setSelfAssignment, updateEntryStatus } from "@/app/actions";
 import TimeAgo from "@/components/TimeAgo";
-import { STATUS_OPTIONS, displayName, statusMeta } from "@/lib/constants";
+import { STATUS_OPTIONS, statusMeta } from "@/lib/constants";
 
-export default function PipelineCard({ entry, expanded, onToggle, currentUserId }) {
+export default function PipelineCard({ entry, expanded, onToggle, myName }) {
   const [noteDraft, setNoteDraft] = useState("");
   const [error, setError] = useState("");
   const [pending, startTransition] = useTransition();
 
   const meta = statusMeta(entry.status);
-  const mine = entry.assigned_to === currentUserId;
-  const assignee = displayName(entry.assignee);
+  const assignee = entry.assigned_to || "";
+  const mine =
+    Boolean(assignee) &&
+    Boolean(myName) &&
+    assignee.trim().toLowerCase() === myName.trim().toLowerCase();
   const callLogs = entry.call_logs ?? [];
 
   const run = (fn) => {
@@ -27,14 +30,14 @@ export default function PipelineCard({ entry, expanded, onToggle, currentUserId 
   const changeStatus = (status) =>
     run(() => updateEntryStatus(entry.id, status));
 
-  const toggleAssign = () => run(() => setSelfAssignment(entry.id, !mine));
+  const toggleAssign = () => run(() => setSelfAssignment(entry.id, myName, !mine));
 
   const submitNote = () => {
     const text = noteDraft.trim();
     if (!text) return;
     setError("");
     startTransition(async () => {
-      const result = await addCallLog(entry.id, text);
+      const result = await addCallLog(entry.id, text, myName);
       if (result?.ok) setNoteDraft("");
       else setError(result?.error || "That didn't save. Try again.");
     });
@@ -97,9 +100,7 @@ export default function PipelineCard({ entry, expanded, onToggle, currentUserId 
             </div>
             <div>
               <p className="text-xs text-slate-500">Logged by</p>
-              <p className="break-words text-slate-200">
-                {displayName(entry.logger) || "—"}
-              </p>
+              <p className="break-words text-slate-200">{entry.logged_by || "—"}</p>
             </div>
           </div>
 
@@ -137,10 +138,12 @@ export default function PipelineCard({ entry, expanded, onToggle, currentUserId 
                 </span>
                 <button
                   onClick={toggleAssign}
-                  disabled={pending || (Boolean(assignee) && !mine)}
+                  disabled={pending || (Boolean(assignee) && !mine) || (!mine && !myName)}
                   title={
                     assignee && !mine
                       ? `${assignee} is already on this`
+                      : !myName
+                      ? "Enter your name above first"
                       : undefined
                   }
                   className="rounded-md bg-slate-700 px-2 py-1 text-xs text-white transition-colors hover:bg-slate-600 disabled:opacity-50"
@@ -185,7 +188,7 @@ export default function PipelineCard({ entry, expanded, onToggle, currentUserId 
                     <div className="min-w-0">
                       <span className="break-words">{c.note}</span>
                       <span className="ml-2 text-xs text-slate-600">
-                        {displayName(c.author) || "someone"} ·{" "}
+                        {c.author_name || "someone"} ·{" "}
                       </span>
                       <TimeAgo ts={c.created_at} className="text-xs text-slate-600" />
                     </div>

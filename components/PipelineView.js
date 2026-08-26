@@ -1,24 +1,36 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import PipelineCard from "@/components/PipelineCard";
+import { getLocalName, setLocalName } from "@/lib/localName";
 import { STATUS_OPTIONS } from "@/lib/constants";
 
-export default function PipelineView({ entries = [], currentUserId }) {
+export default function PipelineView({ entries = [] }) {
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [mineOnly, setMineOnly] = useState(false);
   const [expanded, setExpanded] = useState(null);
+  const [myName, setMyName] = useState("");
+
+  useEffect(() => {
+    setMyName(getLocalName());
+  }, []);
+
+  const changeMyName = (e) => {
+    setMyName(e.target.value);
+    setLocalName(e.target.value);
+  };
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
+    const mine = myName.trim().toLowerCase();
 
     return entries.filter((e) => {
       if (typeFilter !== "all" && e.type !== typeFilter) return false;
       if (statusFilter !== "all" && e.status !== statusFilter) return false;
-      if (mineOnly && e.assigned_to !== currentUserId) return false;
+      if (mineOnly && (e.assigned_to || "").trim().toLowerCase() !== mine) return false;
       if (!q) return true;
 
       return (
@@ -27,10 +39,17 @@ export default function PipelineView({ entries = [], currentUserId }) {
         (e.category || "").toLowerCase().includes(q)
       );
     });
-  }, [entries, query, typeFilter, statusFilter, mineOnly, currentUserId]);
+  }, [entries, query, typeFilter, statusFilter, mineOnly, myName]);
 
   return (
     <div className="space-y-4">
+      <input
+        className="input"
+        value={myName}
+        onChange={changeMyName}
+        placeholder="Your name (used for assignment and call notes)"
+      />
+
       <div className="flex flex-wrap gap-2">
         <div className="relative min-w-[160px] flex-1">
           <Search size={14} className="absolute left-2.5 top-2.5 text-slate-500" />
@@ -84,7 +103,7 @@ export default function PipelineView({ entries = [], currentUserId }) {
       {filtered.length === 0 ? (
         <div className="py-10 text-center text-sm text-slate-500">
           {entries.length === 0
-            ? "No contacts logged yet. Loggers add them from their own screen."
+            ? "No contacts logged yet. Add them from the Log screen."
             : "Nothing matches those filters."}
         </div>
       ) : (
@@ -93,7 +112,7 @@ export default function PipelineView({ entries = [], currentUserId }) {
             <PipelineCard
               key={e.id}
               entry={e}
-              currentUserId={currentUserId}
+              myName={myName}
               expanded={expanded === e.id}
               onToggle={() => setExpanded(expanded === e.id ? null : e.id)}
             />

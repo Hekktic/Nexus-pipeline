@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { createEntry } from "@/app/actions";
 import Field from "@/components/Field";
 import TimeAgo from "@/components/TimeAgo";
+import { getLocalName, setLocalName } from "@/lib/localName";
 import { statusMeta } from "@/lib/constants";
 
 const EMPTY = {
@@ -14,13 +15,23 @@ const EMPTY = {
   notes: "",
 };
 
-export default function LogForm({ recent = [], loggerName }) {
+export default function LogForm({ recent = [] }) {
   const [type, setType] = useState("creator");
   const [form, setForm] = useState(EMPTY);
+  const [loggerName, setLoggerName] = useState("");
   const [touched, setTouched] = useState(false);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
   const [pending, startTransition] = useTransition();
+
+  useEffect(() => {
+    setLoggerName(getLocalName());
+  }, []);
+
+  const changeLoggerName = (e) => {
+    setLoggerName(e.target.value);
+    setLocalName(e.target.value);
+  };
 
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
 
@@ -32,7 +43,7 @@ export default function LogForm({ recent = [], loggerName }) {
     if (!valid || pending) return;
 
     startTransition(async () => {
-      const result = await createEntry({ ...form, type });
+      const result = await createEntry({ ...form, type, loggerName });
       if (!result?.ok) {
         setError(result?.error || "Couldn't save that. Try again.");
         return;
@@ -46,6 +57,15 @@ export default function LogForm({ recent = [], loggerName }) {
 
   return (
     <div className="space-y-5">
+      <Field label="Your name">
+        <input
+          className="input"
+          value={loggerName}
+          onChange={changeLoggerName}
+          placeholder="So the closer knows who logged this"
+        />
+      </Field>
+
       <div className="flex gap-2">
         <TypeToggle value="creator" current={type} onClick={setType} label="Creator" />
         <TypeToggle value="brand" current={type} onClick={setType} label="Brand" />
@@ -122,17 +142,13 @@ export default function LogForm({ recent = [], loggerName }) {
         {pending ? "Adding..." : "Add to pipeline"}
       </button>
 
-      <p className="text-center text-xs text-slate-500">
-        {saved ? (
-          <span className="text-emerald-400">Added to the pipeline</span>
-        ) : (
-          <>Logging as {loggerName}</>
-        )}
-      </p>
+      {saved && (
+        <p className="text-center text-xs text-emerald-400">Added to the pipeline</p>
+      )}
 
       {recent.length > 0 && (
         <div className="border-t border-slate-800 pt-3">
-          <p className="mb-2 text-xs text-slate-500">Your last added</p>
+          <p className="mb-2 text-xs text-slate-500">Recently added</p>
           <div className="space-y-1">
             {recent.map((r) => (
               <div

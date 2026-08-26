@@ -1,10 +1,9 @@
 import LoginForm from "@/components/LoginForm";
 import SetupNotice from "@/components/SetupNotice";
-import { hasSupabaseEnv } from "@/lib/supabase/env";
+import { hasAppPassword } from "@/lib/session";
 
-export default async function LoginPage({ searchParams }) {
-  if (!hasSupabaseEnv) return <SetupNotice />;
+export default async function LoginPage() {
+  if (!hasAppPassword) return <SetupNotice />;
 
-  const params = await searchParams;
-  return <LoginForm linkError={params?.error === "link"} />;
+  return <LoginForm />;
 }

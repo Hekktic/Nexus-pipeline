@@ -1,17 +1,17 @@
 # Nexus Pipeline
 
-Next.js (App Router) + Supabase rebuild of the localStorage prototype. Magic-link
-auth, a role stored on `profiles`, and two screens behind it:
+Next.js (App Router) + Supabase. One shared password gates the whole app —
+no individual accounts, no email, no roles. Everyone who knows the password
+gets both screens:
 
-| Role     | Sees                                                                        |
-| -------- | --------------------------------------------------------------------------- |
-| `logger` | A form to add entries (type, name, contact, category, detail, notes)         |
-| `closer` | Every entry, filterable — change status, assign themselves, add call notes   |
-| `admin`  | Both screens                                                                 |
+| Screen       | What it's for                                                              |
+| ------------ | --------------------------------------------------------------------------- |
+| `/log`       | A form to add entries (type, name, contact, category, detail, notes)        |
+| `/pipeline`  | Every entry, filterable — change status, assign, add call notes             |
 
-The split is enforced in three places: the route guards, the server actions, and
-Row Level Security. A logger cannot change a status even by hand-crafting a
-request.
+"Logged by" / "Assigned to" / call-note author are plain free-text names
+people type into a "Your name" field — remembered per browser via
+localStorage, not tied to any login.
 
 ## Setup
 
@@ -22,100 +22,73 @@ npm install
 ```
 
 **2. Database** — open the Supabase SQL editor and run the whole of
-[`supabase/schema.sql`](supabase/schema.sql). It creates the three tables,
-their indexes, the `updated_at` triggers, a trigger that gives every new signup
-a `profiles` row, and all the RLS policies. It's safe to re-run.
+[`supabase/schema.sql`](supabase/schema.sql). It creates the two tables,
+their indexes, and the `updated_at` triggers. It's safe to re-run.
 
-**3. Credentials** — copy `.env.local.example` to `.env.local` and fill in the
-two values from *Project Settings → API*:
+If this is an **existing** project that still has the old Supabase-Auth
+schema (a `profiles` table, uuid columns on `entries`/`call_logs`), run
+[`supabase/migrate_drop_auth.sql`](supabase/migrate_drop_auth.sql) instead —
+it backfills names from `profiles` before dropping it, then leaves you at
+the same end state as `schema.sql`.
+
+**3. Credentials** — copy `.env.local.example` to `.env.local` and fill in:
 
 ```
+APP_PASSWORD=choose-a-shared-password
 NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-public-key
-NEXT_PUBLIC_SITE_URL=http://localhost:3000
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
 
-**4. Auth redirect URLs** — in *Authentication → URL Configuration*, set Site URL
-to `http://localhost:3000` and add these to Redirect URLs:
+The Supabase values are under *Project Settings → API* — use the
+**service_role** key, not the anon key. It's a server-only secret; never put
+it behind `NEXT_PUBLIC_`.
 
-```
-http://localhost:3000/auth/callback
-http://localhost:3000/auth/confirm
-```
-
-Add the production equivalents before you deploy.
-
-**5. Run**
+**4. Run**
 
 ```bash
 npm run dev
 ```
 
-Sign in at `http://localhost:3000`. The first sign-in creates the account as a
-**logger**. To make someone a closer:
+Sign in at `http://localhost:3000` with the password from `APP_PASSWORD`.
 
-```sql
-update public.profiles set role = 'closer' where email = 'them@company.com';
-```
+## Auth model
 
-## Magic links (optional hardening)
+There is no Supabase Auth. Signing in checks the submitted password against
+`APP_PASSWORD` (constant-time compare) and, if it matches, sets an httpOnly
+cookie holding a SHA-256 hash of that password. `middleware.js` checks that
+cookie on every request and redirects signed-out visitors to `/login`.
 
-Out of the box the default Supabase email template works — it returns to
-`/auth/callback` with a PKCE code. Some corporate mail scanners pre-fetch links
-and burn the code before the person clicks. If you hit that, change the Magic
-Link template (*Authentication → Email Templates*) to:
-
-```html
-<a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email">
-  Sign in to Nexus Pipeline
-</a>
-```
-
-`/auth/confirm` is already implemented and handles that flow.
-
-Supabase's built-in SMTP is rate limited to a handful of emails per hour — wire
-up your own SMTP provider before a team of loggers starts using this.
+The server talks to Supabase using the **service role key**, which bypasses
+Row Level Security — so RLS is off on both tables. The shared password is the
+only access control; there is nothing more granular underneath it.
 
 ## Schema
 
-`profiles` — `id` (FK to `auth.users`), `email`, `full_name`, `role`
-(`logger` | `closer` | `admin`, default `logger`), `created_at`
+`entries` — `id`, `type` (`creator` | `brand`), `name`, `contact`,
+`category`, `detail`, `notes`, `status` (eight values, default `new`),
+`logged_by` (text), `assigned_to` (text), `created_at`, `updated_at`
 
-`entries` — `id`, `type` (`creator` | `brand`), `name`, `contact`, `category`,
-`detail`, `notes`, `status` (the prototype's eight values, default `new`),
-`logged_by`, `assigned_to`, `created_at`, `updated_at`
-
-`call_logs` — `id`, `entry_id`, `author_id`, `note`, `created_at`
-
-The brief's column list didn't come through, so this is the schema the app
-queries. If your existing tables differ, the query shapes to update are the
-`SELECT` in [`app/pipeline/page.js`](app/pipeline/page.js) and the inserts in
-[`app/actions.js`](app/actions.js).
+`call_logs` — `id`, `entry_id`, `author_name` (text), `note`, `created_at`
 
 ## Structure
 
 ```
 app/
-  page.js               role-based redirect
-  actions.js            server actions (create entry, status, assign, call log)
-  login/                magic-link form
-  auth/callback         PKCE code exchange
-  auth/confirm          token_hash verification
-  log/                  logger screen
-  pipeline/             closer screen
+  page.js               redirects to /log
+  actions.js            server actions: login, sign out, create entry,
+                         update status, assign, add call log
+  login/                shared-password form
+  log/                  entry capture screen
+  pipeline/             filterable pipeline + call notes
 components/             LogForm, PipelineView, PipelineCard, AppShell, ...
 lib/
-  auth.js               session + profile + role helpers
-  constants.js          statuses, timeAgo (shared with the prototype)
-  supabase/             browser / server / middleware clients
-middleware.js           refreshes the session cookie, guards signed-out access
-supabase/schema.sql     tables, triggers, RLS
+  session.js            password check + cookie token (Node runtime)
+  session-edge.js        same token, computed with Web Crypto (Edge runtime,
+                         used by middleware.js)
+  localName.js           localStorage "Your name" helper (not auth)
+  constants.js           statuses, timeAgo
+  supabase/              server-only client (service role key)
+middleware.js           checks the session cookie, guards signed-out access
+supabase/schema.sql     tables, indexes, triggers
+supabase/migrate_drop_auth.sql   one-time migration off the old auth schema
 ```
-
-## Differences from the prototype
-
-- "Logged by" is no longer a free-text field — it's the signed-in user.
-- Call notes live in their own table with an author and a timestamp, instead of
-  a JSON array on the entry.
-- Statuses, colors, labels, field structure, and layout are carried over as-is.
-- Added an "assigned to me" filter, since closers now claim their own work.
