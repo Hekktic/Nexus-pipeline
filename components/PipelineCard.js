@@ -1,19 +1,18 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { ChevronDown, ChevronUp, Clock, UserCheck } from "lucide-react";
-import { addCallLog, setSelfAssignment, updateEntryStatus } from "@/app/actions";
+import { ChevronDown, ChevronUp, Clock } from "lucide-react";
+import { addCallLog, setAssignedTo, updateEntryStatus } from "@/app/actions";
 import TimeAgo from "@/components/TimeAgo";
-import { STATUS_OPTIONS, displayName, statusMeta } from "@/lib/constants";
+import { STATUS_OPTIONS, statusMeta } from "@/lib/constants";
 
-export default function PipelineCard({ entry, expanded, onToggle, currentUserId }) {
+export default function PipelineCard({ entry, expanded, onToggle }) {
   const [noteDraft, setNoteDraft] = useState("");
+  const [assigneeDraft, setAssigneeDraft] = useState(entry.assigned_to || "");
   const [error, setError] = useState("");
   const [pending, startTransition] = useTransition();
 
   const meta = statusMeta(entry.status);
-  const mine = entry.assigned_to === currentUserId;
-  const assignee = displayName(entry.assignee);
   const callLogs = entry.call_logs ?? [];
 
   const run = (fn) => {
@@ -27,7 +26,7 @@ export default function PipelineCard({ entry, expanded, onToggle, currentUserId 
   const changeStatus = (status) =>
     run(() => updateEntryStatus(entry.id, status));
 
-  const toggleAssign = () => run(() => setSelfAssignment(entry.id, !mine));
+  const setAssignee = () => run(() => setAssignedTo(entry.id, assigneeDraft));
 
   const submitNote = () => {
     const text = noteDraft.trim();
@@ -64,18 +63,6 @@ export default function PipelineCard({ entry, expanded, onToggle, currentUserId 
           </p>
         </div>
 
-        {assignee && (
-          <span
-            className={`hidden shrink-0 items-center gap-1 text-xs sm:flex ${
-              mine ? "text-amber-400" : "text-slate-500"
-            }`}
-            title={`Assigned to ${assignee}`}
-          >
-            <UserCheck size={12} />
-            {mine ? "You" : assignee}
-          </span>
-        )}
-
         <TimeAgo
           ts={entry.updated_at}
           className="hidden shrink-0 text-xs text-slate-600 sm:inline"
@@ -97,9 +84,7 @@ export default function PipelineCard({ entry, expanded, onToggle, currentUserId 
             </div>
             <div>
               <p className="text-xs text-slate-500">Logged by</p>
-              <p className="break-words text-slate-200">
-                {displayName(entry.logger) || "—"}
-              </p>
+              <p className="break-words text-slate-200">{entry.logged_by || "—"}</p>
             </div>
           </div>
 
@@ -131,21 +116,19 @@ export default function PipelineCard({ entry, expanded, onToggle, currentUserId 
 
             <div>
               <p className="mb-1 text-xs text-slate-500">Assigned closer</p>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-slate-300">
-                  {assignee ? (mine ? "You" : assignee) : "Unassigned"}
-                </span>
+              <div className="flex items-center gap-1">
+                <input
+                  className="input-sm w-auto"
+                  value={assigneeDraft}
+                  onChange={(e) => setAssigneeDraft(e.target.value)}
+                  placeholder="Name"
+                />
                 <button
-                  onClick={toggleAssign}
-                  disabled={pending || (Boolean(assignee) && !mine)}
-                  title={
-                    assignee && !mine
-                      ? `${assignee} is already on this`
-                      : undefined
-                  }
+                  onClick={setAssignee}
+                  disabled={pending}
                   className="rounded-md bg-slate-700 px-2 py-1 text-xs text-white transition-colors hover:bg-slate-600 disabled:opacity-50"
                 >
-                  {mine ? "Release" : "Assign to me"}
+                  Set
                 </button>
               </div>
             </div>
@@ -183,11 +166,8 @@ export default function PipelineCard({ entry, expanded, onToggle, currentUserId 
                   <div key={c.id} className="flex gap-2 text-sm text-slate-300">
                     <Clock size={12} className="mt-1 shrink-0 text-slate-600" />
                     <div className="min-w-0">
-                      <span className="break-words">{c.note}</span>
-                      <span className="ml-2 text-xs text-slate-600">
-                        {displayName(c.author) || "someone"} ·{" "}
-                      </span>
-                      <TimeAgo ts={c.created_at} className="text-xs text-slate-600" />
+                      <span className="break-words">{c.text}</span>
+                      <TimeAgo ts={c.created_at} className="ml-2 text-xs text-slate-600" />
                     </div>
                   </div>
                 ))}

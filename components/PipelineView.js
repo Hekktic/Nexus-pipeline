@@ -5,11 +5,10 @@ import { Search } from "lucide-react";
 import PipelineCard from "@/components/PipelineCard";
 import { STATUS_OPTIONS } from "@/lib/constants";
 
-export default function PipelineView({ entries = [], currentUserId }) {
+export default function PipelineView({ entries = [] }) {
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [mineOnly, setMineOnly] = useState(false);
   const [expanded, setExpanded] = useState(null);
 
   const filtered = useMemo(() => {
@@ -18,7 +17,6 @@ export default function PipelineView({ entries = [], currentUserId }) {
     return entries.filter((e) => {
       if (typeFilter !== "all" && e.type !== typeFilter) return false;
       if (statusFilter !== "all" && e.status !== statusFilter) return false;
-      if (mineOnly && e.assigned_to !== currentUserId) return false;
       if (!q) return true;
 
       return (
@@ -27,7 +25,7 @@ export default function PipelineView({ entries = [], currentUserId }) {
         (e.category || "").toLowerCase().includes(q)
       );
     });
-  }, [entries, query, typeFilter, statusFilter, mineOnly, currentUserId]);
+  }, [entries, query, typeFilter, statusFilter]);
 
   return (
     <div className="space-y-4">
@@ -64,17 +62,6 @@ export default function PipelineView({ entries = [], currentUserId }) {
             </option>
           ))}
         </select>
-
-        <button
-          onClick={() => setMineOnly((v) => !v)}
-          className={`rounded-md border px-3 text-sm transition-colors ${
-            mineOnly
-              ? "border-amber-500 bg-amber-500 text-slate-950"
-              : "border-slate-700 bg-slate-950 text-slate-400 hover:text-slate-200"
-          }`}
-        >
-          Mine
-        </button>
       </div>
 
       <p className="text-xs text-slate-500">
@@ -84,7 +71,7 @@ export default function PipelineView({ entries = [], currentUserId }) {
       {filtered.length === 0 ? (
         <div className="py-10 text-center text-sm text-slate-500">
           {entries.length === 0
-            ? "No contacts logged yet. Loggers add them from their own screen."
+            ? "No contacts logged yet. Add them from the Log screen."
             : "Nothing matches those filters."}
         </div>
       ) : (
@@ -93,7 +80,6 @@ export default function PipelineView({ entries = [], currentUserId }) {
             <PipelineCard
               key={e.id}
               entry={e}
-              currentUserId={currentUserId}
               expanded={expanded === e.id}
               onToggle={() => setExpanded(expanded === e.id ? null : e.id)}
             />

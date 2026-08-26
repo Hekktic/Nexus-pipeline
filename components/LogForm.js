@@ -14,9 +14,10 @@ const EMPTY = {
   notes: "",
 };
 
-export default function LogForm({ recent = [], loggerName }) {
+export default function LogForm({ recent = [] }) {
   const [type, setType] = useState("creator");
   const [form, setForm] = useState(EMPTY);
+  const [loggedBy, setLoggedBy] = useState("");
   const [touched, setTouched] = useState(false);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
@@ -24,7 +25,7 @@ export default function LogForm({ recent = [], loggerName }) {
 
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
 
-  const valid = form.name.trim() && form.contact.trim();
+  const valid = form.name.trim() && form.contact.trim() && loggedBy.trim();
 
   const submit = () => {
     setTouched(true);
@@ -32,7 +33,7 @@ export default function LogForm({ recent = [], loggerName }) {
     if (!valid || pending) return;
 
     startTransition(async () => {
-      const result = await createEntry({ ...form, type });
+      const result = await createEntry({ ...form, type, loggedBy });
       if (!result?.ok) {
         setError(result?.error || "Couldn't save that. Try again.");
         return;
@@ -112,6 +113,19 @@ export default function LogForm({ recent = [], loggerName }) {
         />
       </Field>
 
+      <Field
+        label="Logged by"
+        required
+        error={touched && !loggedBy.trim() && "Enter your name"}
+      >
+        <input
+          className="input"
+          value={loggedBy}
+          onChange={(e) => setLoggedBy(e.target.value)}
+          placeholder="Your name"
+        />
+      </Field>
+
       {error && <p className="text-sm text-red-400">{error}</p>}
 
       <button
@@ -122,17 +136,13 @@ export default function LogForm({ recent = [], loggerName }) {
         {pending ? "Adding..." : "Add to pipeline"}
       </button>
 
-      <p className="text-center text-xs text-slate-500">
-        {saved ? (
-          <span className="text-emerald-400">Added to the pipeline</span>
-        ) : (
-          <>Logging as {loggerName}</>
-        )}
-      </p>
+      {saved && (
+        <p className="text-center text-xs text-emerald-400">Added to the pipeline</p>
+      )}
 
       {recent.length > 0 && (
         <div className="border-t border-slate-800 pt-3">
-          <p className="mb-2 text-xs text-slate-500">Your last added</p>
+          <p className="mb-2 text-xs text-slate-500">Recently added</p>
           <div className="space-y-1">
             {recent.map((r) => (
               <div

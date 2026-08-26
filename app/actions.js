@@ -1,10 +1,12 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { getSessionProfile, isCloser, isLogger } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { ENTRY_TYPES, STATUS_VALUES } from "@/lib/constants";
+import { SESSION_COOKIE, SESSION_MAX_AGE } from "@/lib/session-cookie-name";
+import { checkPassword, sessionToken } from "@/lib/session";
 
 const MAX_SHORT = 200;
 const MAX_LONG = 2000;
@@ -18,29 +20,51 @@ function clean(value, max = MAX_SHORT) {
 }
 
 /**
- * Every action re-checks the role server-side. RLS would reject a forged
- * request anyway; this just turns it into a readable message.
+ * Every action re-checks the session cookie server-side. Middleware already
+ * keeps signed-out visitors off these routes; this is just cheap insurance.
  */
-async function requireRole(check, message) {
-  const { user, profile, supabase } = await getSessionProfile();
-  if (!user) return { error: "Your session expired. Sign in again." };
-  if (!check(profile)) return { error: message };
-  return { user, profile, supabase };
+async function requireSession() {
+  const cookieStore = await cookies();
+  const cookie = cookieStore.get(SESSION_COOKIE)?.value;
+  if (!cookie || cookie !== sessionToken()) {
+    return { error: "Your session expired. Sign in again." };
+  }
+  return { supabase: createClient() };
+}
+
+export async function login(password) {
+  if (!checkPassword(password)) return fail("Incorrect password.");
+
+  const cookieStore = await cookies();
+  cookieStore.set(SESSION_COOKIE, sessionToken(), {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: SESSION_MAX_AGE,
+  });
+
+  redirect("/");
+}
+
+export async function signOut() {
+  const cookieStore = await cookies();
+  cookieStore.delete(SESSION_COOKIE);
+  redirect("/login");
 }
 
 export async function createEntry(input) {
-  const ctx = await requireRole(
-    isLogger,
-    "Your account isn't set up to log contacts."
-  );
+  const ctx = await requireSession();
   if (ctx.error) return fail(ctx.error);
 
   const type = ENTRY_TYPES.includes(input?.type) ? input.type : "creator";
   const name = clean(input?.name);
   const contact = clean(input?.contact);
+  const loggedBy = clean(input?.loggedBy);
 
   if (!name) return fail("Enter a name.");
   if (!contact) return fail("Enter contact info.");
+  if (!loggedBy) return fail("Enter your name.");
 
   const { error } = await ctx.supabase.from("entries").insert({
     type,
@@ -49,7 +73,7 @@ export async function createEntry(input) {
     category: clean(input?.category) || null,
     detail: clean(input?.detail) || null,
     notes: clean(input?.notes, MAX_LONG) || null,
-    logged_by: ctx.user.id,
+    logged_by: loggedBy,
     status: "new",
   });
 
@@ -61,7 +85,7 @@ export async function createEntry(input) {
 }
 
 export async function updateEntryStatus(entryId, status) {
-  const ctx = await requireRole(isCloser, "Only closers can change status.");
+  const ctx = await requireSession();
   if (ctx.error) return fail(ctx.error);
 
   if (!STATUS_VALUES.includes(status)) return fail("Unknown status.");
@@ -77,14 +101,13 @@ export async function updateEntryStatus(entryId, status) {
   return { ok: true };
 }
 
-/** Closers claim work for themselves — or drop it again. */
-export async function setSelfAssignment(entryId, assign) {
-  const ctx = await requireRole(isCloser, "Only closers can assign entries.");
+export async function setAssignedTo(entryId, name) {
+  const ctx = await requireSession();
   if (ctx.error) return fail(ctx.error);
 
   const { error } = await ctx.supabase
     .from("entries")
-    .update({ assigned_to: assign ? ctx.user.id : null })
+    .update({ assigned_to: clean(name) || null })
     .eq("id", entryId);
 
   if (error) return fail(error.message);
@@ -93,27 +116,20 @@ export async function setSelfAssignment(entryId, assign) {
   return { ok: true };
 }
 
-export async function addCallLog(entryId, note) {
-  const ctx = await requireRole(isCloser, "Only closers can add call notes.");
+export async function addCallLog(entryId, text) {
+  const ctx = await requireSession();
   if (ctx.error) return fail(ctx.error);
 
-  const text = clean(note, MAX_LONG);
-  if (!text) return fail("Write something first.");
+  const cleanText = clean(text, MAX_LONG);
+  if (!cleanText) return fail("Write something first.");
 
   const { error } = await ctx.supabase.from("call_logs").insert({
     entry_id: entryId,
-    author_id: ctx.user.id,
-    note: text,
+    text: cleanText,
   });
 
   if (error) return fail(error.message);
 
   revalidatePath("/pipeline");
   return { ok: true };
-}
-
-export async function signOut() {
-  const supabase = await createClient();
-  await supabase.auth.signOut();
-  redirect("/login");
 }
