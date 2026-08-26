@@ -1,12 +1,15 @@
 -- =============================================================================
 -- Nexus Pipeline — Supabase schema
--- Paste this whole file into the Supabase SQL editor and run it once.
--- Safe to re-run: everything is create-if-not-exists / create-or-replace.
+-- Paste this whole file into the Supabase SQL editor and run it once, on a
+-- brand new project. Safe to re-run: everything is create-if-not-exists /
+-- create-or-replace.
 --
 -- There is no Supabase Auth involved. The app is gated by a single shared
--- password (APP_PASSWORD) checked at the Next.js layer, and the server talks
--- to Supabase with the service role key, which bypasses RLS entirely — so
--- RLS is left off below. Do not expose the service role key to the browser.
+-- password (APP_PASSWORD) checked at the Next.js layer. The server talks to
+-- Supabase with the anon/publishable key, and since there's no per-user
+-- session to scope access by, RLS is enabled but the policies below simply
+-- allow full read/write to anyone using that key — the shared password is
+-- the only access control.
 -- =============================================================================
 
 -- -----------------------------------------------------------------------------
@@ -35,14 +38,13 @@ create index if not exists entries_assigned_to_idx on public.entries (assigned_t
 create index if not exists entries_updated_at_idx  on public.entries (updated_at desc);
 
 -- -----------------------------------------------------------------------------
--- call_logs: append-only notes a closer adds to an entry
+-- call_logs: append-only notes anyone can add to an entry over time
 -- -----------------------------------------------------------------------------
 create table if not exists public.call_logs (
-  id          uuid primary key default gen_random_uuid(),
-  entry_id    uuid not null references public.entries (id) on delete cascade,
-  author_name text,
-  note        text not null,
-  created_at  timestamptz not null default now()
+  id         uuid primary key default gen_random_uuid(),
+  entry_id   uuid not null references public.entries (id) on delete cascade,
+  text       text not null,
+  created_at timestamptz not null default now()
 );
 
 create index if not exists call_logs_entry_id_idx on public.call_logs (entry_id, created_at desc);
@@ -83,7 +85,24 @@ create trigger call_logs_touch_entry
   after insert on public.call_logs
   for each row execute function public.touch_entry_on_call_log();
 
--- Row Level Security stays off: the service role key (server-only) is the
--- only credential the app ever uses, and it bypasses RLS regardless.
-alter table public.entries   disable row level security;
-alter table public.call_logs disable row level security;
+-- =============================================================================
+-- Row Level Security — enabled, but wide open. There's no per-user identity
+-- to restrict by, so anyone holding the anon key (i.e. this app, once past
+-- the shared password) can read and write freely.
+-- =============================================================================
+alter table public.entries   enable row level security;
+alter table public.call_logs enable row level security;
+
+drop policy if exists "entries full access" on public.entries;
+create policy "entries full access"
+  on public.entries for all
+  to anon
+  using (true)
+  with check (true);
+
+drop policy if exists "call logs full access" on public.call_logs;
+create policy "call logs full access"
+  on public.call_logs for all
+  to anon
+  using (true)
+  with check (true);

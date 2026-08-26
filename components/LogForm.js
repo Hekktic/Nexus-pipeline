@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { createEntry } from "@/app/actions";
 import Field from "@/components/Field";
 import TimeAgo from "@/components/TimeAgo";
-import { getLocalName, setLocalName } from "@/lib/localName";
 import { statusMeta } from "@/lib/constants";
 
 const EMPTY = {
@@ -18,24 +17,15 @@ const EMPTY = {
 export default function LogForm({ recent = [] }) {
   const [type, setType] = useState("creator");
   const [form, setForm] = useState(EMPTY);
-  const [loggerName, setLoggerName] = useState("");
+  const [loggedBy, setLoggedBy] = useState("");
   const [touched, setTouched] = useState(false);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
   const [pending, startTransition] = useTransition();
 
-  useEffect(() => {
-    setLoggerName(getLocalName());
-  }, []);
-
-  const changeLoggerName = (e) => {
-    setLoggerName(e.target.value);
-    setLocalName(e.target.value);
-  };
-
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
 
-  const valid = form.name.trim() && form.contact.trim();
+  const valid = form.name.trim() && form.contact.trim() && loggedBy.trim();
 
   const submit = () => {
     setTouched(true);
@@ -43,7 +33,7 @@ export default function LogForm({ recent = [] }) {
     if (!valid || pending) return;
 
     startTransition(async () => {
-      const result = await createEntry({ ...form, type, loggerName });
+      const result = await createEntry({ ...form, type, loggedBy });
       if (!result?.ok) {
         setError(result?.error || "Couldn't save that. Try again.");
         return;
@@ -57,15 +47,6 @@ export default function LogForm({ recent = [] }) {
 
   return (
     <div className="space-y-5">
-      <Field label="Your name">
-        <input
-          className="input"
-          value={loggerName}
-          onChange={changeLoggerName}
-          placeholder="So the closer knows who logged this"
-        />
-      </Field>
-
       <div className="flex gap-2">
         <TypeToggle value="creator" current={type} onClick={setType} label="Creator" />
         <TypeToggle value="brand" current={type} onClick={setType} label="Brand" />
@@ -129,6 +110,19 @@ export default function LogForm({ recent = [] }) {
           value={form.notes}
           onChange={set("notes")}
           placeholder="Anything the closer should know before calling"
+        />
+      </Field>
+
+      <Field
+        label="Logged by"
+        required
+        error={touched && !loggedBy.trim() && "Enter your name"}
+      >
+        <input
+          className="input"
+          value={loggedBy}
+          onChange={(e) => setLoggedBy(e.target.value)}
+          placeholder="Your name"
         />
       </Field>
 

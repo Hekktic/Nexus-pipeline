@@ -14,13 +14,13 @@ export default function SetupNotice() {
 
 APP_PASSWORD=choose-a-shared-password
 NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key`}
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-public-key`}
         </pre>
         <p className="text-slate-400">
           The Supabase values are in the dashboard under{" "}
           <span className="text-slate-200">Project Settings → API</span> — use the{" "}
-          <span className="text-slate-200">service_role</span> key, not the anon
-          key. Restart the dev server after saving.
+          <span className="text-slate-200">anon / public</span> key. Restart the
+          dev server after saving.
         </p>
       </div>
     </div>

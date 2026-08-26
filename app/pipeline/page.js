@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 const SELECT = `
   id, type, name, contact, category, detail, notes, status,
   logged_by, assigned_to, created_at, updated_at,
-  call_logs ( id, note, author_name, created_at )
+  call_logs ( id, text, created_at )
 `;
 
 export default async function PipelinePage() {
