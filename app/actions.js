@@ -4,7 +4,11 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { ENTRY_TYPES, STATUS_VALUES } from "@/lib/constants";
+import {
+  BRAND_STATUS_VALUES,
+  ONBOARDING_STATUS_VALUES,
+  VETTING_STATUS_VALUES,
+} from "@/lib/constants";
 import { SESSION_COOKIE, SESSION_MAX_AGE } from "@/lib/session-cookie-name";
 import { checkPassword, sessionToken } from "@/lib/session";
 
@@ -53,11 +57,10 @@ export async function signOut() {
   redirect("/login");
 }
 
-export async function createEntry(input) {
+export async function createBrand(input) {
   const ctx = await requireSession();
   if (ctx.error) return fail(ctx.error);
 
-  const type = ENTRY_TYPES.includes(input?.type) ? input.type : "creator";
   const name = clean(input?.name);
   const contact = clean(input?.contact);
   const loggedBy = clean(input?.loggedBy);
@@ -66,15 +69,15 @@ export async function createEntry(input) {
   if (!contact) return fail("Enter contact info.");
   if (!loggedBy) return fail("Enter your name.");
 
-  const { error } = await ctx.supabase.from("entries").insert({
-    type,
+  const { error } = await ctx.supabase.from("brands").insert({
     name,
     contact,
+    website: clean(input?.website) || null,
     category: clean(input?.category) || null,
-    detail: clean(input?.detail) || null,
-    notes: clean(input?.notes, MAX_LONG) || null,
+    margin_notes: clean(input?.marginNotes, MAX_LONG) || null,
+    fulfillment_notes: clean(input?.fulfillmentNotes, MAX_LONG) || null,
     logged_by: loggedBy,
-    status: "new",
+    status: "prospect",
   });
 
   if (error) return fail(error.message);
@@ -84,16 +87,54 @@ export async function createEntry(input) {
   return { ok: true };
 }
 
-export async function updateEntryStatus(entryId, status) {
+export async function createCreator(input) {
   const ctx = await requireSession();
   if (ctx.error) return fail(ctx.error);
 
-  if (!STATUS_VALUES.includes(status)) return fail("Unknown status.");
+  const name = clean(input?.name);
+  const contact = clean(input?.contact);
+  const loggedBy = clean(input?.loggedBy);
+
+  if (!name) return fail("Enter a name.");
+  if (!contact) return fail("Enter contact info.");
+  if (!loggedBy) return fail("Enter your name.");
+
+  const platforms = {};
+  for (const row of Array.isArray(input?.platforms) ? input.platforms : []) {
+    const platform = clean(row?.platform, 50);
+    const followers = clean(row?.followers, 50);
+    if (platform) platforms[platform] = followers;
+  }
+
+  const { error } = await ctx.supabase.from("creators").insert({
+    name,
+    contact,
+    platforms,
+    category: clean(input?.category) || null,
+    audience_demographics: clean(input?.audienceDemographics, MAX_LONG) || null,
+    pricing_expectations: clean(input?.pricingExpectations, MAX_LONG) || null,
+    logged_by: loggedBy,
+    vetting_status: "not_reviewed",
+    onboarding_status: "applied",
+  });
+
+  if (error) return fail(error.message);
+
+  revalidatePath("/log");
+  revalidatePath("/pipeline");
+  return { ok: true };
+}
+
+export async function updateBrandStatus(brandId, status) {
+  const ctx = await requireSession();
+  if (ctx.error) return fail(ctx.error);
+
+  if (!BRAND_STATUS_VALUES.includes(status)) return fail("Unknown status.");
 
   const { error } = await ctx.supabase
-    .from("entries")
+    .from("brands")
     .update({ status })
-    .eq("id", entryId);
+    .eq("id", brandId);
 
   if (error) return fail(error.message);
 
@@ -101,14 +142,16 @@ export async function updateEntryStatus(entryId, status) {
   return { ok: true };
 }
 
-export async function setAssignedTo(entryId, name) {
+export async function updateCreatorVettingStatus(creatorId, status) {
   const ctx = await requireSession();
   if (ctx.error) return fail(ctx.error);
+
+  if (!VETTING_STATUS_VALUES.includes(status)) return fail("Unknown status.");
 
   const { error } = await ctx.supabase
-    .from("entries")
-    .update({ assigned_to: clean(name) || null })
-    .eq("id", entryId);
+    .from("creators")
+    .update({ vetting_status: status })
+    .eq("id", creatorId);
 
   if (error) return fail(error.message);
 
@@ -116,15 +159,37 @@ export async function setAssignedTo(entryId, name) {
   return { ok: true };
 }
 
-export async function addCallLog(entryId, text) {
+export async function updateCreatorOnboardingStatus(creatorId, status) {
   const ctx = await requireSession();
   if (ctx.error) return fail(ctx.error);
+
+  if (!ONBOARDING_STATUS_VALUES.includes(status)) return fail("Unknown status.");
+
+  const { error } = await ctx.supabase
+    .from("creators")
+    .update({ onboarding_status: status })
+    .eq("id", creatorId);
+
+  if (error) return fail(error.message);
+
+  revalidatePath("/pipeline");
+  return { ok: true };
+}
+
+export async function addCallLog(subjectType, subjectId, text) {
+  const ctx = await requireSession();
+  if (ctx.error) return fail(ctx.error);
+
+  if (subjectType !== "brand" && subjectType !== "creator") {
+    return fail("Unknown subject.");
+  }
 
   const cleanText = clean(text, MAX_LONG);
   if (!cleanText) return fail("Write something first.");
 
   const { error } = await ctx.supabase.from("call_logs").insert({
-    entry_id: entryId,
+    subject_type: subjectType,
+    subject_id: subjectId,
     text: cleanText,
   });
 

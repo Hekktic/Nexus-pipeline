@@ -6,31 +6,55 @@ import { hasSupabaseEnv } from "@/lib/supabase/env";
 
 export const dynamic = "force-dynamic";
 
-const SELECT = `
-  id, type, name, contact, category, detail, notes, status,
-  logged_by, assigned_to, created_at, updated_at,
-  call_logs ( id, text, created_at )
-`;
-
 export default async function PipelinePage() {
   if (!hasSupabaseEnv) return <SetupNotice />;
 
   const supabase = createClient();
-  const { data: entries, error } = await supabase
-    .from("entries")
-    .select(SELECT)
-    .order("updated_at", { ascending: false })
-    .order("created_at", { referencedTable: "call_logs", ascending: false });
+  const [
+    { data: brands, error: brandsError },
+    { data: creators, error: creatorsError },
+    { data: callLogs, error: callLogsError },
+  ] = await Promise.all([
+    supabase.from("brands").select("*").order("updated_at", { ascending: false }),
+    supabase.from("creators").select("*").order("updated_at", { ascending: false }),
+    supabase.from("call_logs").select("*").order("created_at", { ascending: false }),
+  ]);
 
-  return (
-    <AppShell active="/pipeline" subtitle="Every logged contact">
-      {error ? (
+  const error = brandsError || creatorsError || callLogsError;
+
+  if (error) {
+    return (
+      <AppShell active="/pipeline" subtitle="Every brand and creator">
         <p className="text-sm text-red-400">
           Couldn&apos;t load the pipeline: {error.message}
         </p>
-      ) : (
-        <PipelineView entries={entries ?? []} />
-      )}
+      </AppShell>
+    );
+  }
+
+  const logsBySubject = new Map();
+  for (const log of callLogs ?? []) {
+    const key = `${log.subject_type}:${log.subject_id}`;
+    if (!logsBySubject.has(key)) logsBySubject.set(key, []);
+    logsBySubject.get(key).push(log);
+  }
+
+  const entries = [
+    ...(brands ?? []).map((b) => ({
+      ...b,
+      kind: "brand",
+      call_logs: logsBySubject.get(`brand:${b.id}`) ?? [],
+    })),
+    ...(creators ?? []).map((c) => ({
+      ...c,
+      kind: "creator",
+      call_logs: logsBySubject.get(`creator:${c.id}`) ?? [],
+    })),
+  ].sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+
+  return (
+    <AppShell active="/pipeline" subtitle="Every brand and creator">
+      <PipelineView entries={entries} />
     </AppShell>
   );
 }

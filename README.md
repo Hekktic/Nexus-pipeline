@@ -6,11 +6,15 @@ gets both screens:
 
 | Screen       | What it's for                                                              |
 | ------------ | --------------------------------------------------------------------------- |
-| `/log`       | A form to add entries (type, name, contact, category, detail, notes, logged by) |
-| `/pipeline`  | Every entry, filterable — change status, set an assigned closer, add call notes |
+| `/log`       | A form to add a brand or creator, with fields specific to each              |
+| `/pipeline`  | Every brand and creator, filterable — update status, add call notes         |
 
-"Logged by" and "Assigned closer" are plain typed names — nobody has an
-account, so nothing verifies who's actually typing.
+Brands and creators are separate tables with different fields (see Schema
+below) rather than one generic "entry" — a brand doesn't have a vetting
+status, and a creator doesn't have a website.
+
+"Logged by" is a plain typed name — nobody has an account, so nothing
+verifies who's actually typing.
 
 ## Setup
 
@@ -22,9 +26,17 @@ npm install
 
 **2. Database** — create a new Supabase project, open its SQL editor, and
 run the whole of [`supabase/schema.sql`](supabase/schema.sql). It creates
-the two tables, their indexes, the `updated_at` triggers, and Row Level
-Security policies that allow full read/write to the anon key. Safe to
-re-run.
+the tables, their indexes, the `updated_at` triggers, and Row Level Security
+policies that allow full read/write to the anon key. Safe to re-run.
+
+If this project still has the old Phase 1 single `entries` table, this same
+script also migrates it in place — it copies each row into `brands` or
+`creators` based on its `type`, without dropping `entries`. Once you've
+checked the data landed correctly, drop it yourself:
+
+```sql
+drop table public.entries;
+```
 
 **3. Credentials** — copy `.env.local.example` to `.env.local` and fill in:
 
@@ -60,29 +72,41 @@ identity to scope database rows by.
 
 ## Schema
 
-`entries` — `id`, `type` (`creator` | `brand`), `name`, `contact`,
-`category`, `detail`, `notes`, `status` (eight values, default `new`),
-`logged_by` (text), `assigned_to` (text), `created_at`, `updated_at`
+`brands` — `id`, `name`, `contact`, `website`, `category`, `margin_notes`,
+`fulfillment_notes`, `status` (`prospect` | `discovery_call` | `pilot` |
+`active` | `paused` | `churned`, default `prospect`), `logged_by`,
+`created_at`, `updated_at`
 
-`call_logs` — `id`, `entry_id`, `text`, `created_at`
+`creators` — `id`, `name`, `contact`, `platforms` (jsonb, platform name ->
+follower count), `category`, `audience_demographics`,
+`pricing_expectations`, `vetting_status` (`not_reviewed` | `reviewing` |
+`verified` | `rejected`, default `not_reviewed`), `onboarding_status`
+(`applied` | `contacted` | `negotiating` | `onboarded` | `active` |
+`inactive`, default `applied`), `logged_by`, `created_at`, `updated_at`
+
+`call_logs` — `id`, `subject_type` (`brand` | `creator`), `subject_id`,
+`text`, `created_at`. `subject_type`/`subject_id` point at either table —
+there's no cross-table foreign key in Postgres for that, so it's enforced
+in the server actions instead.
 
 ## Structure
 
 ```
 app/
   page.js               redirects to /log
-  actions.js            server actions: login, sign out, create entry,
-                         update status, set assignee, add call log
+  actions.js            server actions: login, sign out, create brand,
+                         create creator, update statuses, add call log
   login/                shared-password form
-  log/                  entry capture screen
+  log/                  brand/creator capture screen
   pipeline/             filterable pipeline + call notes
 components/             LogForm, PipelineView, PipelineCard, AppShell, ...
 lib/
   session.js            password check + cookie token (Node runtime)
   session-edge.js        same token, computed with Web Crypto (Edge runtime,
                          used by middleware.js)
-  constants.js           statuses, timeAgo
+  constants.js           status option sets, timeAgo
   supabase/              server-only client (anon key)
 middleware.js           checks the session cookie, guards signed-out access
-supabase/schema.sql     tables, indexes, triggers, RLS policies
+supabase/schema.sql     tables, indexes, triggers, RLS policies, Phase 1
+                        migration
 ```
