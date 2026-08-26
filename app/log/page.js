@@ -10,15 +10,29 @@ export default async function LogPage() {
   if (!hasSupabaseEnv) return <SetupNotice />;
 
   const supabase = createClient();
-  const { data: recent } = await supabase
-    .from("entries")
-    .select("id, name, type, status, created_at")
-    .order("created_at", { ascending: false })
-    .limit(5);
+  const [{ data: brands }, { data: creators }] = await Promise.all([
+    supabase
+      .from("brands")
+      .select("id, name, status, created_at")
+      .order("created_at", { ascending: false })
+      .limit(5),
+    supabase
+      .from("creators")
+      .select("id, name, onboarding_status, created_at")
+      .order("created_at", { ascending: false })
+      .limit(5),
+  ]);
+
+  const recent = [
+    ...(brands ?? []).map((b) => ({ ...b, kind: "brand" })),
+    ...(creators ?? []).map((c) => ({ ...c, kind: "creator" })),
+  ]
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    .slice(0, 5);
 
   return (
     <AppShell active="/log" subtitle="Log a new creator or brand">
-      <LogForm recent={recent ?? []} />
+      <LogForm recent={recent} />
     </AppShell>
   );
 }

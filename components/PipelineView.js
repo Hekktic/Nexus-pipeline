@@ -3,20 +3,28 @@
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import PipelineCard from "@/components/PipelineCard";
-import { STATUS_OPTIONS } from "@/lib/constants";
+import {
+  BRAND_STATUS_OPTIONS,
+  ONBOARDING_STATUS_OPTIONS,
+  VETTING_STATUS_OPTIONS,
+} from "@/lib/constants";
 
 export default function PipelineView({ entries = [] }) {
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [brandStatusFilter, setBrandStatusFilter] = useState("all");
+  const [vettingFilter, setVettingFilter] = useState("all");
+  const [onboardingFilter, setOnboardingFilter] = useState("all");
   const [expanded, setExpanded] = useState(null);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
 
     return entries.filter((e) => {
-      if (typeFilter !== "all" && e.type !== typeFilter) return false;
-      if (statusFilter !== "all" && e.status !== statusFilter) return false;
+      if (typeFilter !== "all" && e.kind !== typeFilter) return false;
+      if (e.kind === "brand" && brandStatusFilter !== "all" && e.status !== brandStatusFilter) return false;
+      if (e.kind === "creator" && vettingFilter !== "all" && e.vetting_status !== vettingFilter) return false;
+      if (e.kind === "creator" && onboardingFilter !== "all" && e.onboarding_status !== onboardingFilter) return false;
       if (!q) return true;
 
       return (
@@ -25,7 +33,7 @@ export default function PipelineView({ entries = [] }) {
         (e.category || "").toLowerCase().includes(q)
       );
     });
-  }, [entries, query, typeFilter, statusFilter]);
+  }, [entries, query, typeFilter, brandStatusFilter, vettingFilter, onboardingFilter]);
 
   return (
     <div className="space-y-4">
@@ -45,23 +53,55 @@ export default function PipelineView({ entries = [] }) {
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value)}
         >
-          <option value="all">All types</option>
+          <option value="all">All</option>
           <option value="creator">Creators</option>
           <option value="brand">Brands</option>
         </select>
 
-        <select
-          className="input w-auto"
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-        >
-          <option value="all">All statuses</option>
-          {STATUS_OPTIONS.map((s) => (
-            <option key={s.value} value={s.value}>
-              {s.label}
-            </option>
-          ))}
-        </select>
+        {typeFilter === "brand" && (
+          <select
+            className="input w-auto"
+            value={brandStatusFilter}
+            onChange={(e) => setBrandStatusFilter(e.target.value)}
+          >
+            <option value="all">All statuses</option>
+            {BRAND_STATUS_OPTIONS.map((s) => (
+              <option key={s.value} value={s.value}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+        )}
+
+        {typeFilter === "creator" && (
+          <>
+            <select
+              className="input w-auto"
+              value={vettingFilter}
+              onChange={(e) => setVettingFilter(e.target.value)}
+            >
+              <option value="all">All vetting</option>
+              {VETTING_STATUS_OPTIONS.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+
+            <select
+              className="input w-auto"
+              value={onboardingFilter}
+              onChange={(e) => setOnboardingFilter(e.target.value)}
+            >
+              <option value="all">All onboarding</option>
+              {ONBOARDING_STATUS_OPTIONS.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+          </>
+        )}
       </div>
 
       <p className="text-xs text-slate-500">
@@ -78,10 +118,12 @@ export default function PipelineView({ entries = [] }) {
         <div className="space-y-2">
           {filtered.map((e) => (
             <PipelineCard
-              key={e.id}
+              key={`${e.kind}-${e.id}`}
               entry={e}
-              expanded={expanded === e.id}
-              onToggle={() => setExpanded(expanded === e.id ? null : e.id)}
+              expanded={expanded === `${e.kind}-${e.id}`}
+              onToggle={() =>
+                setExpanded(expanded === `${e.kind}-${e.id}` ? null : `${e.kind}-${e.id}`)
+              }
             />
           ))}
         </div>

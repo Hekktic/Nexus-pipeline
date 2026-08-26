@@ -2,17 +2,29 @@
 
 import { useState, useTransition } from "react";
 import { ChevronDown, ChevronUp, Clock } from "lucide-react";
-import { addCallLog, setAssignedTo, updateEntryStatus } from "@/app/actions";
+import {
+  addCallLog,
+  updateBrandStatus,
+  updateCreatorOnboardingStatus,
+  updateCreatorVettingStatus,
+} from "@/app/actions";
 import TimeAgo from "@/components/TimeAgo";
-import { STATUS_OPTIONS, statusMeta } from "@/lib/constants";
+import {
+  BRAND_STATUS_OPTIONS,
+  ONBOARDING_STATUS_OPTIONS,
+  VETTING_STATUS_OPTIONS,
+  brandStatusMeta,
+  onboardingStatusMeta,
+  vettingStatusMeta,
+} from "@/lib/constants";
 
 export default function PipelineCard({ entry, expanded, onToggle }) {
   const [noteDraft, setNoteDraft] = useState("");
-  const [assigneeDraft, setAssigneeDraft] = useState(entry.assigned_to || "");
   const [error, setError] = useState("");
   const [pending, startTransition] = useTransition();
 
-  const meta = statusMeta(entry.status);
+  const isBrand = entry.kind === "brand";
+  const badgeMeta = isBrand ? brandStatusMeta(entry.status) : onboardingStatusMeta(entry.onboarding_status);
   const callLogs = entry.call_logs ?? [];
 
   const run = (fn) => {
@@ -23,21 +35,26 @@ export default function PipelineCard({ entry, expanded, onToggle }) {
     });
   };
 
-  const changeStatus = (status) =>
-    run(() => updateEntryStatus(entry.id, status));
-
-  const setAssignee = () => run(() => setAssignedTo(entry.id, assigneeDraft));
+  const changeBrandStatus = (status) => run(() => updateBrandStatus(entry.id, status));
+  const changeVetting = (status) => run(() => updateCreatorVettingStatus(entry.id, status));
+  const changeOnboarding = (status) => run(() => updateCreatorOnboardingStatus(entry.id, status));
 
   const submitNote = () => {
     const text = noteDraft.trim();
     if (!text) return;
     setError("");
     startTransition(async () => {
-      const result = await addCallLog(entry.id, text);
+      const result = await addCallLog(entry.kind, entry.id, text);
       if (result?.ok) setNoteDraft("");
       else setError(result?.error || "That didn't save. Try again.");
     });
   };
+
+  const platformSummary = isBrand
+    ? ""
+    : Object.entries(entry.platforms || {})
+        .map(([platform, followers]) => (followers ? `${platform} (${followers})` : platform))
+        .join(", ");
 
   return (
     <div
@@ -50,16 +67,24 @@ export default function PipelineCard({ entry, expanded, onToggle }) {
         className="flex w-full items-center gap-3 px-3 py-2.5 text-left"
       >
         <span
-          className={`shrink-0 rounded px-2 py-0.5 text-[10px] uppercase tracking-wide text-white ${meta.color}`}
+          className={`shrink-0 rounded px-2 py-0.5 text-[10px] uppercase tracking-wide text-white ${badgeMeta.color}`}
         >
-          {meta.label}
+          {badgeMeta.label}
         </span>
+
+        {!isBrand && (
+          <span
+            className={`hidden shrink-0 rounded px-2 py-0.5 text-[10px] uppercase tracking-wide text-white sm:inline ${vettingStatusMeta(entry.vetting_status).color}`}
+          >
+            {vettingStatusMeta(entry.vetting_status).label}
+          </span>
+        )}
 
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-white">{entry.name}</p>
           <p className="truncate text-xs text-slate-500">
-            {entry.type === "creator" ? "Creator" : "Brand"} ·{" "}
-            {entry.category || "no category"} · {entry.contact}
+            {isBrand ? "Brand" : "Creator"} · {entry.category || "no category"} ·{" "}
+            {isBrand ? entry.contact : platformSummary || entry.contact}
           </p>
         </div>
 
@@ -77,62 +102,16 @@ export default function PipelineCard({ entry, expanded, onToggle }) {
 
       {expanded && (
         <div className="space-y-3 border-t border-slate-800 px-3 pb-3 pt-3">
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div>
-              <p className="text-xs text-slate-500">Detail</p>
-              <p className="break-words text-slate-200">{entry.detail || "—"}</p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-500">Logged by</p>
-              <p className="break-words text-slate-200">{entry.logged_by || "—"}</p>
-            </div>
-          </div>
-
-          {entry.notes && (
-            <div>
-              <p className="text-xs text-slate-500">Original notes</p>
-              <p className="whitespace-pre-wrap text-sm text-slate-300">
-                {entry.notes}
-              </p>
-            </div>
+          {isBrand ? (
+            <BrandDetail entry={entry} pending={pending} onChangeStatus={changeBrandStatus} />
+          ) : (
+            <CreatorDetail
+              entry={entry}
+              pending={pending}
+              onChangeVetting={changeVetting}
+              onChangeOnboarding={changeOnboarding}
+            />
           )}
-
-          <div className="flex flex-wrap items-end gap-3">
-            <div>
-              <p className="mb-1 text-xs text-slate-500">Status</p>
-              <select
-                className="input-sm"
-                value={entry.status}
-                disabled={pending}
-                onChange={(e) => changeStatus(e.target.value)}
-              >
-                {STATUS_OPTIONS.map((s) => (
-                  <option key={s.value} value={s.value}>
-                    {s.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <p className="mb-1 text-xs text-slate-500">Assigned closer</p>
-              <div className="flex items-center gap-1">
-                <input
-                  className="input-sm w-auto"
-                  value={assigneeDraft}
-                  onChange={(e) => setAssigneeDraft(e.target.value)}
-                  placeholder="Name"
-                />
-                <button
-                  onClick={setAssignee}
-                  disabled={pending}
-                  className="rounded-md bg-slate-700 px-2 py-1 text-xs text-white transition-colors hover:bg-slate-600 disabled:opacity-50"
-                >
-                  Set
-                </button>
-              </div>
-            </div>
-          </div>
 
           <div>
             <p className="mb-1 text-xs text-slate-500">Call log</p>
@@ -141,7 +120,7 @@ export default function PipelineCard({ entry, expanded, onToggle }) {
                 className="input-sm flex-1"
                 value={noteDraft}
                 onChange={(e) => setNoteDraft(e.target.value)}
-                placeholder="Log what happened on the call..."
+                placeholder="Log what happened..."
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
@@ -179,5 +158,128 @@ export default function PipelineCard({ entry, expanded, onToggle }) {
         </div>
       )}
     </div>
+  );
+}
+
+function BrandDetail({ entry, pending, onChangeStatus }) {
+  return (
+    <>
+      <div className="grid grid-cols-2 gap-3 text-sm">
+        <div>
+          <p className="text-xs text-slate-500">Website</p>
+          <p className="break-words text-slate-200">{entry.website || "—"}</p>
+        </div>
+        <div>
+          <p className="text-xs text-slate-500">Logged by</p>
+          <p className="break-words text-slate-200">{entry.logged_by || "—"}</p>
+        </div>
+      </div>
+
+      {entry.margin_notes && (
+        <div>
+          <p className="text-xs text-slate-500">Margin notes</p>
+          <p className="whitespace-pre-wrap text-sm text-slate-300">{entry.margin_notes}</p>
+        </div>
+      )}
+
+      {entry.fulfillment_notes && (
+        <div>
+          <p className="text-xs text-slate-500">Fulfillment notes</p>
+          <p className="whitespace-pre-wrap text-sm text-slate-300">{entry.fulfillment_notes}</p>
+        </div>
+      )}
+
+      <div>
+        <p className="mb-1 text-xs text-slate-500">Status</p>
+        <select
+          className="input-sm"
+          value={entry.status}
+          disabled={pending}
+          onChange={(e) => onChangeStatus(e.target.value)}
+        >
+          {BRAND_STATUS_OPTIONS.map((s) => (
+            <option key={s.value} value={s.value}>
+              {s.label}
+            </option>
+          ))}
+        </select>
+      </div>
+    </>
+  );
+}
+
+function CreatorDetail({ entry, pending, onChangeVetting, onChangeOnboarding }) {
+  const platforms = Object.entries(entry.platforms || {});
+
+  return (
+    <>
+      <div className="grid grid-cols-2 gap-3 text-sm">
+        <div>
+          <p className="text-xs text-slate-500">Contact</p>
+          <p className="break-words text-slate-200">{entry.contact || "—"}</p>
+        </div>
+        <div>
+          <p className="text-xs text-slate-500">Logged by</p>
+          <p className="break-words text-slate-200">{entry.logged_by || "—"}</p>
+        </div>
+      </div>
+
+      {platforms.length > 0 && (
+        <div>
+          <p className="text-xs text-slate-500">Platforms</p>
+          <p className="text-sm text-slate-200">
+            {platforms.map(([p, count]) => (count ? `${p} (${count})` : p)).join(", ")}
+          </p>
+        </div>
+      )}
+
+      {entry.audience_demographics && (
+        <div>
+          <p className="text-xs text-slate-500">Audience demographics</p>
+          <p className="whitespace-pre-wrap text-sm text-slate-300">{entry.audience_demographics}</p>
+        </div>
+      )}
+
+      {entry.pricing_expectations && (
+        <div>
+          <p className="text-xs text-slate-500">Pricing expectations</p>
+          <p className="text-sm text-slate-300">{entry.pricing_expectations}</p>
+        </div>
+      )}
+
+      <div className="flex flex-wrap gap-3">
+        <div>
+          <p className="mb-1 text-xs text-slate-500">Vetting</p>
+          <select
+            className="input-sm"
+            value={entry.vetting_status}
+            disabled={pending}
+            onChange={(e) => onChangeVetting(e.target.value)}
+          >
+            {VETTING_STATUS_OPTIONS.map((s) => (
+              <option key={s.value} value={s.value}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <p className="mb-1 text-xs text-slate-500">Onboarding</p>
+          <select
+            className="input-sm"
+            value={entry.onboarding_status}
+            disabled={pending}
+            onChange={(e) => onChangeOnboarding(e.target.value)}
+          >
+            {ONBOARDING_STATUS_OPTIONS.map((s) => (
+              <option key={s.value} value={s.value}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+    </>
   );
 }
