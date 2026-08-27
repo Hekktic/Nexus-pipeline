@@ -176,6 +176,57 @@ export async function updateCreatorOnboardingStatus(creatorId, status) {
   return { ok: true };
 }
 
+export async function createTeamMember(input) {
+  const ctx = await requireSession();
+  if (ctx.error) return fail(ctx.error);
+
+  const displayName = clean(input?.displayName);
+  if (!displayName) return fail("Enter a name.");
+
+  const { error } = await ctx.supabase.from("team_members").insert({
+    display_name: displayName,
+    role: clean(input?.role) || null,
+  });
+
+  if (error) return fail(error.message);
+
+  revalidatePath("/settings");
+  return { ok: true };
+}
+
+export async function updateTeamMember(memberId, input) {
+  const ctx = await requireSession();
+  if (ctx.error) return fail(ctx.error);
+
+  const displayName = clean(input?.displayName);
+  if (!displayName) return fail("Enter a name.");
+
+  const { error } = await ctx.supabase
+    .from("team_members")
+    .update({ display_name: displayName, role: clean(input?.role) || null })
+    .eq("id", memberId);
+
+  if (error) return fail(error.message);
+
+  revalidatePath("/settings");
+  return { ok: true };
+}
+
+export async function setTeamMemberActive(memberId, isActive) {
+  const ctx = await requireSession();
+  if (ctx.error) return fail(ctx.error);
+
+  const { error } = await ctx.supabase
+    .from("team_members")
+    .update({ is_active: Boolean(isActive) })
+    .eq("id", memberId);
+
+  if (error) return fail(error.message);
+
+  revalidatePath("/settings");
+  return { ok: true };
+}
+
 export async function addCallLog(subjectType, subjectId, text) {
   const ctx = await requireSession();
   if (ctx.error) return fail(ctx.error);
