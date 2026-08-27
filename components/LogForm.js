@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { Plus, X } from "lucide-react";
 import { createBrand, createCreator } from "@/app/actions";
 import Field from "@/components/Field";
@@ -35,12 +36,16 @@ export default function LogForm({ recent = [] }) {
   const [loggedBy, setLoggedBy] = useState("");
   const [touched, setTouched] = useState(false);
   const [error, setError] = useState("");
+  const [duplicateMatches, setDuplicateMatches] = useState(null);
   const [saved, setSaved] = useState(false);
   const [pending, startTransition] = useTransition();
 
   const form = type === "creator" ? creator : brand;
   const setForm = type === "creator" ? setCreator : setBrand;
-  const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
+  const set = (key) => (e) => {
+    setDuplicateMatches(null);
+    setForm((f) => ({ ...f, [key]: e.target.value }));
+  };
 
   const valid = form.name.trim() && form.contact.trim() && loggedBy.trim();
 
@@ -64,24 +69,32 @@ export default function LogForm({ recent = [] }) {
       platforms: c.platforms.filter((_, idx) => idx !== i),
     }));
 
-  const submit = () => {
+  const submit = (confirmDuplicate = false) => {
     setTouched(true);
     setError("");
+    if (!confirmDuplicate) setDuplicateMatches(null);
     if (!valid || pending) return;
 
     startTransition(async () => {
       const result =
         type === "creator"
-          ? await createCreator({ ...creator, loggedBy })
-          : await createBrand({ ...brand, loggedBy });
+          ? await createCreator({ ...creator, loggedBy, confirmDuplicate })
+          : await createBrand({ ...brand, loggedBy, confirmDuplicate });
 
       if (!result?.ok) {
-        setError(result?.error || "Couldn't save that. Try again.");
+        if (result?.duplicate) {
+          setDuplicateMatches(result.matches || []);
+          setError(result?.error || "This might already exist.");
+        } else {
+          setDuplicateMatches(null);
+          setError(result?.error || "Couldn't save that. Try again.");
+        }
         return;
       }
       setCreator(EMPTY_CREATOR);
       setBrand(EMPTY_BRAND);
       setTouched(false);
+      setDuplicateMatches(null);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     });
@@ -234,10 +247,42 @@ export default function LogForm({ recent = [] }) {
         />
       </Field>
 
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && !duplicateMatches && <p className="text-sm text-red-400">{error}</p>}
+
+      {duplicateMatches && (
+        <div className="rounded-md border border-amber-800 bg-amber-950/40 p-3">
+          <p className="mb-2 text-sm text-amber-300">{error}</p>
+          <div className="mb-3 space-y-1">
+            {duplicateMatches.map((m) => (
+              <Link
+                key={m.id}
+                href={`/${m.kind}s/${m.id}`}
+                className="block text-xs text-amber-400 underline hover:text-amber-300"
+              >
+                View existing: {m.name} ({m.contact})
+              </Link>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => submit(true)}
+              disabled={pending}
+              className="rounded-md border border-amber-700 px-3 py-1.5 text-xs font-medium text-amber-300 transition-colors hover:bg-amber-900 disabled:opacity-50"
+            >
+              Add anyway
+            </button>
+            <button
+              onClick={() => setDuplicateMatches(null)}
+              className="rounded-md px-3 py-1.5 text-xs text-slate-400 hover:text-slate-200"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       <button
-        onClick={submit}
+        onClick={() => submit(false)}
         disabled={pending}
         className="w-full rounded-md bg-amber-500 py-2.5 font-medium text-slate-950 transition-colors hover:bg-amber-400 disabled:opacity-60"
       >
