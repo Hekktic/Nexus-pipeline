@@ -2,8 +2,9 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Search } from "lucide-react";
+import { Download, Search } from "lucide-react";
 import TimeAgo from "@/components/TimeAgo";
+import { downloadCSV, toCSV } from "@/lib/csv";
 import {
   ONBOARDING_STATUS_OPTIONS,
   VETTING_STATUS_OPTIONS,
@@ -33,6 +34,22 @@ export default function CreatorsListView({ creators = [] }) {
   }, [creators, query, vettingFilter, onboardingFilter, showArchived]);
 
   const archivedCount = creators.filter((c) => c.is_archived).length;
+
+  const exportCSV = () => {
+    const rows = filtered.map((c) => ({
+      name: c.name,
+      contact: c.contact,
+      category: c.category || "",
+      vetting_status: c.vetting_status,
+      onboarding_status: c.onboarding_status,
+      owner: c.owner?.display_name || "",
+      logged_by: c.logged_by || "",
+      tags: (c.tags || []).map((t) => t.name).join("; "),
+      is_archived: c.is_archived ? "yes" : "no",
+      updated_at: c.updated_at,
+    }));
+    downloadCSV(`creators-${new Date().toISOString().slice(0, 10)}.csv`, toCSV(rows));
+  };
 
   return (
     <div className="space-y-4">
@@ -82,9 +99,19 @@ export default function CreatorsListView({ creators = [] }) {
         )}
       </div>
 
-      <p className="text-xs text-slate-500">
-        {filtered.length} of {creators.length} creators
-      </p>
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-slate-500">
+          {filtered.length} of {creators.length} creators
+        </p>
+        {filtered.length > 0 && (
+          <button
+            onClick={exportCSV}
+            className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200"
+          >
+            <Download size={12} /> Export CSV
+          </button>
+        )}
+      </div>
 
       {filtered.length === 0 ? (
         <div className="py-10 text-center text-sm text-slate-500">
