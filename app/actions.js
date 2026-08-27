@@ -16,6 +16,7 @@ import { SESSION_COOKIE, SESSION_MAX_AGE } from "@/lib/session-cookie-name";
 import { checkPassword, sessionToken } from "@/lib/session";
 import { computeAdvanced } from "@/lib/calculators/advanced";
 import { computeQuick } from "@/lib/calculators/quick";
+import { findMatchingRows } from "@/lib/duplicates";
 
 const MAX_SHORT = 200;
 const MAX_LONG = 2000;
@@ -63,6 +64,18 @@ function cleanLinkMap(rows) {
     if (key) map[key] = url;
   }
   return map;
+}
+
+/**
+ * Fetches id/name/contact for a table and hands them to the pure matcher
+ * (lib/duplicates.js) rather than building a raw filter string — contact
+ * info regularly contains commas and parentheses, which would otherwise
+ * break Supabase's `.or()` filter syntax.
+ */
+async function findDuplicates(supabase, table, name, contact) {
+  const { data, error } = await supabase.from(table).select("id, name, contact");
+  if (error || !data) return [];
+  return findMatchingRows(data, name, contact);
 }
 
 /**
@@ -129,6 +142,18 @@ export async function createBrand(input) {
   if (!contact) return fail("Enter contact info.");
   if (!loggedBy) return fail("Enter your name.");
 
+  if (!input?.confirmDuplicate) {
+    const matches = await findDuplicates(ctx.supabase, "brands", name, contact);
+    if (matches.length > 0) {
+      return {
+        ok: false,
+        duplicate: true,
+        matches: matches.map((m) => ({ id: m.id, name: m.name, contact: m.contact, kind: "brand" })),
+        error: `A brand named "${matches[0].name}" already looks like a match.`,
+      };
+    }
+  }
+
   const { data: created, error } = await ctx.supabase
     .from("brands")
     .insert({
@@ -164,6 +189,18 @@ export async function createCreator(input) {
   if (!name) return fail("Enter a name.");
   if (!contact) return fail("Enter contact info.");
   if (!loggedBy) return fail("Enter your name.");
+
+  if (!input?.confirmDuplicate) {
+    const matches = await findDuplicates(ctx.supabase, "creators", name, contact);
+    if (matches.length > 0) {
+      return {
+        ok: false,
+        duplicate: true,
+        matches: matches.map((m) => ({ id: m.id, name: m.name, contact: m.contact, kind: "creator" })),
+        error: `A creator named "${matches[0].name}" already looks like a match.`,
+      };
+    }
+  }
 
   const platforms = {};
   for (const row of Array.isArray(input?.platforms) ? input.platforms : []) {
