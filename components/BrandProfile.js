@@ -1,0 +1,228 @@
+"use client";
+
+import { useState, useTransition } from "react";
+import Link from "next/link";
+import { ArrowLeft, Clock } from "lucide-react";
+import { addCallLog, updateBrand, updateBrandStatus } from "@/app/actions";
+import Field from "@/components/Field";
+import TimeAgo from "@/components/TimeAgo";
+import { BRAND_STATUS_OPTIONS } from "@/lib/constants";
+
+function toFormState(brand) {
+  return {
+    name: brand.name || "",
+    contact: brand.contact || "",
+    website: brand.website || "",
+    category: brand.category || "",
+    primaryContactName: brand.primary_contact_name || "",
+    contactTitle: brand.contact_title || "",
+    email: brand.email || "",
+    phone: brand.phone || "",
+    products: brand.products || "",
+    avgProductPrice: brand.avg_product_price ?? "",
+    targetCustomer: brand.target_customer || "",
+    preferredNiches: brand.preferred_niches || "",
+    preferredPlatforms: brand.preferred_platforms || "",
+    campaignObjectives: brand.campaign_objectives || "",
+    budget: brand.budget || "",
+    commissionRange: brand.commission_range || "",
+    sampleAvailability: brand.sample_availability || "",
+    marginNotes: brand.margin_notes || "",
+    fulfillmentNotes: brand.fulfillment_notes || "",
+    notes: brand.notes || "",
+    ownerId: brand.owner_id || "",
+    lastContactDate: brand.last_contact_date || "",
+    nextFollowUpDate: brand.next_follow_up_date || "",
+    estimatedDealValue: brand.estimated_deal_value ?? "",
+  };
+}
+
+export default function BrandProfile({ brand, teamMembers = [], callLogs = [] }) {
+  const [form, setForm] = useState(() => toFormState(brand));
+  const [noteDraft, setNoteDraft] = useState("");
+  const [error, setError] = useState("");
+  const [saved, setSaved] = useState(false);
+  const [pending, startTransition] = useTransition();
+
+  const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
+
+  const save = () => {
+    setError("");
+    startTransition(async () => {
+      const result = await updateBrand(brand.id, form);
+      if (!result?.ok) {
+        setError(result?.error || "Couldn't save that. Try again.");
+        return;
+      }
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    });
+  };
+
+  const changeStatus = (status) => {
+    startTransition(async () => {
+      const result = await updateBrandStatus(brand.id, status);
+      if (!result?.ok) setError(result?.error || "That didn't save. Try again.");
+    });
+  };
+
+  const submitNote = () => {
+    const text = noteDraft.trim();
+    if (!text) return;
+    startTransition(async () => {
+      const result = await addCallLog("brand", brand.id, text);
+      if (result?.ok) setNoteDraft("");
+      else setError(result?.error || "That didn't save. Try again.");
+    });
+  };
+
+  return (
+    <div className="space-y-6">
+      <Link href="/brands" className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-slate-200">
+        <ArrowLeft size={14} /> Back to brands
+      </Link>
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-lg font-semibold text-white">{brand.name}</h1>
+          <p className="text-xs text-slate-500">
+            Logged by {brand.logged_by || "—"} · Updated <TimeAgo ts={brand.updated_at} />
+          </p>
+        </div>
+        <select
+          className="input-sm"
+          value={brand.status}
+          disabled={pending}
+          onChange={(e) => changeStatus(e.target.value)}
+        >
+          {BRAND_STATUS_OPTIONS.map((s) => (
+            <option key={s.value} value={s.value}>
+              {s.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <Section title="Contact">
+        <Grid>
+          <Field label="Brand name" required><input className="input" value={form.name} onChange={set("name")} /></Field>
+          <Field label="Contact info" required><input className="input" value={form.contact} onChange={set("contact")} placeholder="email or phone" /></Field>
+          <Field label="Primary contact name"><input className="input" value={form.primaryContactName} onChange={set("primaryContactName")} /></Field>
+          <Field label="Contact title"><input className="input" value={form.contactTitle} onChange={set("contactTitle")} /></Field>
+          <Field label="Email"><input className="input" value={form.email} onChange={set("email")} /></Field>
+          <Field label="Phone"><input className="input" value={form.phone} onChange={set("phone")} /></Field>
+          <Field label="Website / Shopify URL"><input className="input" value={form.website} onChange={set("website")} /></Field>
+        </Grid>
+      </Section>
+
+      <Section title="Company">
+        <Grid>
+          <Field label="Industry / category"><input className="input" value={form.category} onChange={set("category")} /></Field>
+          <Field label="Products"><input className="input" value={form.products} onChange={set("products")} /></Field>
+          <Field label="Average product price"><input className="input" type="number" value={form.avgProductPrice} onChange={set("avgProductPrice")} /></Field>
+          <Field label="Target customer"><input className="input" value={form.targetCustomer} onChange={set("targetCustomer")} /></Field>
+          <Field label="Preferred creator niches"><input className="input" value={form.preferredNiches} onChange={set("preferredNiches")} /></Field>
+          <Field label="Preferred platforms"><input className="input" value={form.preferredPlatforms} onChange={set("preferredPlatforms")} /></Field>
+        </Grid>
+      </Section>
+
+      <Section title="Commercial">
+        <Grid>
+          <Field label="Campaign objectives"><input className="input" value={form.campaignObjectives} onChange={set("campaignObjectives")} /></Field>
+          <Field label="Monthly / campaign budget"><input className="input" value={form.budget} onChange={set("budget")} /></Field>
+          <Field label="Commission range"><input className="input" value={form.commissionRange} onChange={set("commissionRange")} /></Field>
+          <Field label="Sample availability"><input className="input" value={form.sampleAvailability} onChange={set("sampleAvailability")} /></Field>
+          <Field label="Estimated deal value"><input className="input" type="number" value={form.estimatedDealValue} onChange={set("estimatedDealValue")} /></Field>
+        </Grid>
+      </Section>
+
+      <Section title="Pipeline">
+        <Grid>
+          <Field label="Assigned owner">
+            <select className="input" value={form.ownerId} onChange={set("ownerId")}>
+              <option value="">Unassigned</option>
+              {teamMembers.map((m) => (
+                <option key={m.id} value={m.id}>{m.display_name}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Last contact"><input className="input" type="date" value={form.lastContactDate} onChange={set("lastContactDate")} /></Field>
+          <Field label="Next follow-up"><input className="input" type="date" value={form.nextFollowUpDate} onChange={set("nextFollowUpDate")} /></Field>
+        </Grid>
+      </Section>
+
+      <Section title="Notes">
+        <div className="space-y-3">
+          <Field label="Margin notes"><textarea className="input min-h-[60px]" value={form.marginNotes} onChange={set("marginNotes")} /></Field>
+          <Field label="Fulfillment notes"><textarea className="input min-h-[60px]" value={form.fulfillmentNotes} onChange={set("fulfillmentNotes")} /></Field>
+          <Field label="General notes"><textarea className="input min-h-[60px]" value={form.notes} onChange={set("notes")} /></Field>
+        </div>
+      </Section>
+
+      {error && <p className="text-sm text-red-400">{error}</p>}
+
+      <div className="flex items-center gap-3">
+        <button
+          onClick={save}
+          disabled={pending || !form.name.trim() || !form.contact.trim()}
+          className="rounded-md bg-amber-500 px-4 py-2 text-sm font-medium text-slate-950 transition-colors hover:bg-amber-400 disabled:opacity-50"
+        >
+          {pending ? "Saving..." : "Save profile"}
+        </button>
+        {saved && <span className="text-xs text-emerald-400">Saved</span>}
+      </div>
+
+      <Section title="Call log">
+        <div className="mb-2 flex gap-2">
+          <input
+            className="input-sm flex-1"
+            value={noteDraft}
+            onChange={(e) => setNoteDraft(e.target.value)}
+            placeholder="Log what happened..."
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                submitNote();
+              }
+            }}
+          />
+          <button
+            onClick={submitNote}
+            disabled={pending || !noteDraft.trim()}
+            className="shrink-0 rounded-md bg-amber-500 px-3 text-xs font-medium text-slate-950 transition-colors hover:bg-amber-400 disabled:opacity-50"
+          >
+            Add
+          </button>
+        </div>
+        {callLogs.length === 0 ? (
+          <p className="text-xs text-slate-600">No call notes yet.</p>
+        ) : (
+          <div className="max-h-64 space-y-1.5 overflow-y-auto">
+            {callLogs.map((c) => (
+              <div key={c.id} className="flex gap-2 text-sm text-slate-300">
+                <Clock size={12} className="mt-1 shrink-0 text-slate-600" />
+                <div className="min-w-0">
+                  <span className="break-words">{c.text}</span>
+                  <TimeAgo ts={c.created_at} className="ml-2 text-xs text-slate-600" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Section>
+    </div>
+  );
+}
+
+function Section({ title, children }) {
+  return (
+    <div className="rounded-lg border border-slate-800 bg-slate-950 p-4">
+      <h2 className="mb-3 text-sm font-semibold text-white">{title}</h2>
+      {children}
+    </div>
+  );
+}
+
+function Grid({ children }) {
+  return <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">{children}</div>;
+}

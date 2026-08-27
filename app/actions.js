@@ -23,6 +23,29 @@ function clean(value, max = MAX_SHORT) {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
 }
 
+function cleanNumber(value) {
+  if (value === null || value === undefined || value === "") return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+function cleanDate(value) {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function cleanRating(value) {
+  const n = cleanNumber(value);
+  return n === null ? null : Math.min(5, Math.max(1, Math.round(n)));
+}
+
+function cleanBoolean(value) {
+  return value === null || value === undefined ? null : Boolean(value);
+}
+
+function cleanOwnerId(value) {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
 /**
  * Every action re-checks the session cookie server-side. Middleware already
  * keeps signed-out visitors off these routes; this is just cheap insurance.
@@ -122,6 +145,113 @@ export async function createCreator(input) {
 
   revalidatePath("/log");
   revalidatePath("/pipeline");
+  return { ok: true };
+}
+
+/** Full profile edit from the brand detail page — separate from the quick status dropdown used elsewhere. */
+export async function updateBrand(brandId, input) {
+  const ctx = await requireSession();
+  if (ctx.error) return fail(ctx.error);
+
+  const name = clean(input?.name);
+  const contact = clean(input?.contact);
+  if (!name) return fail("Enter a name.");
+  if (!contact) return fail("Enter contact info.");
+
+  const { error } = await ctx.supabase
+    .from("brands")
+    .update({
+      name,
+      contact,
+      website: clean(input?.website) || null,
+      category: clean(input?.category) || null,
+      primary_contact_name: clean(input?.primaryContactName) || null,
+      contact_title: clean(input?.contactTitle) || null,
+      email: clean(input?.email) || null,
+      phone: clean(input?.phone) || null,
+      products: clean(input?.products, MAX_LONG) || null,
+      avg_product_price: cleanNumber(input?.avgProductPrice),
+      target_customer: clean(input?.targetCustomer, MAX_LONG) || null,
+      preferred_niches: clean(input?.preferredNiches, MAX_LONG) || null,
+      preferred_platforms: clean(input?.preferredPlatforms, MAX_LONG) || null,
+      campaign_objectives: clean(input?.campaignObjectives, MAX_LONG) || null,
+      budget: clean(input?.budget) || null,
+      commission_range: clean(input?.commissionRange) || null,
+      sample_availability: clean(input?.sampleAvailability) || null,
+      margin_notes: clean(input?.marginNotes, MAX_LONG) || null,
+      fulfillment_notes: clean(input?.fulfillmentNotes, MAX_LONG) || null,
+      notes: clean(input?.notes, MAX_LONG) || null,
+      owner_id: cleanOwnerId(input?.ownerId),
+      last_contact_date: cleanDate(input?.lastContactDate),
+      next_follow_up_date: cleanDate(input?.nextFollowUpDate),
+      estimated_deal_value: cleanNumber(input?.estimatedDealValue),
+    })
+    .eq("id", brandId);
+
+  if (error) return fail(error.message);
+
+  revalidatePath("/brands");
+  revalidatePath(`/brands/${brandId}`);
+  revalidatePath("/pipeline");
+  revalidatePath("/contacts");
+  return { ok: true };
+}
+
+/** Full profile edit from the creator detail page — separate from the quick status dropdowns used elsewhere. */
+export async function updateCreator(creatorId, input) {
+  const ctx = await requireSession();
+  if (ctx.error) return fail(ctx.error);
+
+  const name = clean(input?.name);
+  const contact = clean(input?.contact);
+  if (!name) return fail("Enter a name.");
+  if (!contact) return fail("Enter contact info.");
+
+  const platformLinks = {};
+  for (const row of Array.isArray(input?.platformLinks) ? input.platformLinks : []) {
+    const platform = clean(row?.platform, 50);
+    const url = clean(row?.url, 300);
+    if (platform) platformLinks[platform] = url;
+  }
+
+  const { error } = await ctx.supabase
+    .from("creators")
+    .update({
+      name,
+      contact,
+      category: clean(input?.category) || null,
+      audience_demographics: clean(input?.audienceDemographics, MAX_LONG) || null,
+      pricing_expectations: clean(input?.pricingExpectations, MAX_LONG) || null,
+      location: clean(input?.location) || null,
+      age_confirmed: cleanBoolean(input?.ageConfirmed),
+      primary_platform: clean(input?.primaryPlatform) || null,
+      platform_links: platformLinks,
+      secondary_niches: clean(input?.secondaryNiches, MAX_LONG) || null,
+      avg_views: clean(input?.avgViews) || null,
+      engagement_rate: clean(input?.engagementRate) || null,
+      content_style: clean(input?.contentStyle, MAX_LONG) || null,
+      previous_brand_partnerships: clean(input?.previousBrandPartnerships, MAX_LONG) || null,
+      preferred_compensation: clean(input?.preferredCompensation) || null,
+      minimum_rate: clean(input?.minimumRate) || null,
+      affiliate_interest: cleanBoolean(input?.affiliateInterest),
+      sample_interest: cleanBoolean(input?.sampleInterest),
+      availability: clean(input?.availability) || null,
+      reliability_rating: cleanRating(input?.reliabilityRating),
+      brand_safety_notes: clean(input?.brandSafetyNotes, MAX_LONG) || null,
+      portfolio_url: clean(input?.portfolioUrl, 300) || null,
+      owner_id: cleanOwnerId(input?.ownerId),
+      last_contact_date: cleanDate(input?.lastContactDate),
+      next_follow_up_date: cleanDate(input?.nextFollowUpDate),
+      total_earnings: cleanNumber(input?.totalEarnings),
+    })
+    .eq("id", creatorId);
+
+  if (error) return fail(error.message);
+
+  revalidatePath("/creators");
+  revalidatePath(`/creators/${creatorId}`);
+  revalidatePath("/pipeline");
+  revalidatePath("/contacts");
   return { ok: true };
 }
 

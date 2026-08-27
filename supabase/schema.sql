@@ -14,6 +14,24 @@
 -- =============================================================================
 
 -- -----------------------------------------------------------------------------
+-- team_members: a simple roster for ownership fields (Contacts, Deals,
+-- Campaigns, Tasks). Not tied to login — there's still only the one shared
+-- password — this just gives "who's responsible for this" a real list
+-- instead of freeform text, so it's ready for real per-user auth later.
+-- Created first since brands/creators reference it via owner_id.
+-- -----------------------------------------------------------------------------
+create table if not exists public.team_members (
+  id           uuid primary key default gen_random_uuid(),
+  display_name text not null,
+  role         text,
+  is_active    boolean not null default true,
+  created_at   timestamptz not null default now(),
+  updated_at   timestamptz not null default now()
+);
+
+create index if not exists team_members_is_active_idx on public.team_members (is_active);
+
+-- -----------------------------------------------------------------------------
 -- brands
 -- -----------------------------------------------------------------------------
 create table if not exists public.brands (
@@ -34,6 +52,32 @@ create table if not exists public.brands (
 
 create index if not exists brands_status_idx     on public.brands (status);
 create index if not exists brands_updated_at_idx on public.brands (updated_at desc);
+
+-- Richer brand profile fields (Phase 2). All additive/nullable — no existing
+-- data is touched. `category` already covers "industry/category" and
+-- `website` already covers "Shopify or storefront URL" from the spec, so
+-- neither is duplicated here.
+alter table public.brands add column if not exists primary_contact_name  text;
+alter table public.brands add column if not exists contact_title         text;
+alter table public.brands add column if not exists email                 text;
+alter table public.brands add column if not exists phone                 text;
+alter table public.brands add column if not exists products              text;
+alter table public.brands add column if not exists avg_product_price     numeric;
+alter table public.brands add column if not exists target_customer       text;
+alter table public.brands add column if not exists preferred_niches      text;
+alter table public.brands add column if not exists preferred_platforms   text;
+alter table public.brands add column if not exists campaign_objectives   text;
+alter table public.brands add column if not exists budget                text;
+alter table public.brands add column if not exists commission_range      text;
+alter table public.brands add column if not exists sample_availability   text;
+alter table public.brands add column if not exists notes                 text;
+alter table public.brands add column if not exists owner_id              uuid references public.team_members (id) on delete set null;
+alter table public.brands add column if not exists last_contact_date     date;
+alter table public.brands add column if not exists next_follow_up_date   date;
+alter table public.brands add column if not exists estimated_deal_value  numeric;
+
+create index if not exists brands_owner_id_idx            on public.brands (owner_id);
+create index if not exists brands_next_follow_up_date_idx on public.brands (next_follow_up_date);
 
 -- -----------------------------------------------------------------------------
 -- creators
@@ -61,6 +105,37 @@ create table if not exists public.creators (
 create index if not exists creators_vetting_status_idx    on public.creators (vetting_status);
 create index if not exists creators_onboarding_status_idx on public.creators (onboarding_status);
 create index if not exists creators_updated_at_idx        on public.creators (updated_at desc);
+
+-- Richer creator profile fields (Phase 2). All additive/nullable — no
+-- existing data is touched. `category` already covers "primary niche" and
+-- `platforms` already covers per-platform follower counts, so neither is
+-- duplicated here; `platform_links` is a separate map for profile URLs
+-- since a creator's follower count and profile link are tracked at
+-- different times in practice.
+alter table public.creators add column if not exists location                      text;
+alter table public.creators add column if not exists age_confirmed                 boolean;
+alter table public.creators add column if not exists primary_platform              text;
+alter table public.creators add column if not exists platform_links                jsonb not null default '{}'::jsonb;
+alter table public.creators add column if not exists secondary_niches              text;
+alter table public.creators add column if not exists avg_views                     text;
+alter table public.creators add column if not exists engagement_rate               text;
+alter table public.creators add column if not exists content_style                 text;
+alter table public.creators add column if not exists previous_brand_partnerships   text;
+alter table public.creators add column if not exists preferred_compensation        text;
+alter table public.creators add column if not exists minimum_rate                  text;
+alter table public.creators add column if not exists affiliate_interest            boolean;
+alter table public.creators add column if not exists sample_interest               boolean;
+alter table public.creators add column if not exists availability                  text;
+alter table public.creators add column if not exists reliability_rating            smallint check (reliability_rating between 1 and 5);
+alter table public.creators add column if not exists brand_safety_notes            text;
+alter table public.creators add column if not exists portfolio_url                 text;
+alter table public.creators add column if not exists owner_id                      uuid references public.team_members (id) on delete set null;
+alter table public.creators add column if not exists last_contact_date             date;
+alter table public.creators add column if not exists next_follow_up_date           date;
+alter table public.creators add column if not exists total_earnings                numeric;
+
+create index if not exists creators_owner_id_idx            on public.creators (owner_id);
+create index if not exists creators_next_follow_up_date_idx on public.creators (next_follow_up_date);
 
 -- -----------------------------------------------------------------------------
 -- call_logs: append-only notes anyone can add to a brand or creator over
@@ -111,23 +186,6 @@ alter table public.call_logs add constraint call_logs_subject_type_check
   check (subject_type in ('brand', 'creator'));
 
 create index if not exists call_logs_subject_idx on public.call_logs (subject_type, subject_id, created_at desc);
-
--- -----------------------------------------------------------------------------
--- team_members: a simple roster for ownership fields (Contacts, Deals,
--- Campaigns, Tasks). Not tied to login — there's still only the one shared
--- password — this just gives "who's responsible for this" a real list
--- instead of freeform text, so it's ready for real per-user auth later.
--- -----------------------------------------------------------------------------
-create table if not exists public.team_members (
-  id           uuid primary key default gen_random_uuid(),
-  display_name text not null,
-  role         text,
-  is_active    boolean not null default true,
-  created_at   timestamptz not null default now(),
-  updated_at   timestamptz not null default now()
-);
-
-create index if not exists team_members_is_active_idx on public.team_members (is_active);
 
 -- -----------------------------------------------------------------------------
 -- Keep updated_at honest — the pipeline sorts on it.
