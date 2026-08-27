@@ -6,6 +6,7 @@ import SetupNotice from "@/components/SetupNotice";
 import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { fetchTagsFor } from "@/lib/tags";
+import { fetchTimelineFor } from "@/lib/timeline";
 
 export const dynamic = "force-dynamic";
 
@@ -15,18 +16,13 @@ export default async function CreatorDetailPage({ params }) {
   const { id } = await params;
   const supabase = createClient();
 
-  const [{ data: creator, error: creatorError }, { data: teamMembers }, { data: callLogs }, { data: allTags }, { tags }] =
+  const [{ data: creator, error: creatorError }, { data: teamMembers }, { data: allTags }, { tags }, { timeline }] =
     await Promise.all([
       supabase.from("creators").select("*").eq("id", id).maybeSingle(),
       supabase.from("team_members").select("id, display_name").eq("is_active", true).order("display_name"),
-      supabase
-        .from("call_logs")
-        .select("*")
-        .eq("subject_type", "creator")
-        .eq("subject_id", id)
-        .order("created_at", { ascending: false }),
       supabase.from("tags").select("name").order("name"),
       fetchTagsFor(supabase, "creator", id),
+      fetchTimelineFor(supabase, "creator", id),
     ]);
 
   if (creatorError) {
@@ -44,7 +40,7 @@ export default async function CreatorDetailPage({ params }) {
       <CreatorProfile
         creator={creator}
         teamMembers={teamMembers ?? []}
-        callLogs={callLogs ?? []}
+        timeline={timeline}
         tags={tags}
         allTagNames={(allTags ?? []).map((t) => t.name)}
       />

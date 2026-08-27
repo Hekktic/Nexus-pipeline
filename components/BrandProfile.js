@@ -2,11 +2,12 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { ArrowLeft, Archive, ArchiveRestore, Clock, Plus, X } from "lucide-react";
-import { addCallLog, setBrandArchived, updateBrand, updateBrandStatus } from "@/app/actions";
+import { ArrowLeft, Archive, ArchiveRestore, Plus, X } from "lucide-react";
+import { setBrandArchived, updateBrand, updateBrandStatus } from "@/app/actions";
 import Field from "@/components/Field";
 import TagsEditor from "@/components/TagsEditor";
 import TimeAgo from "@/components/TimeAgo";
+import Timeline from "@/components/Timeline";
 import { BRAND_STATUS_OPTIONS } from "@/lib/constants";
 
 function toFormState(brand) {
@@ -42,9 +43,8 @@ function toFormState(brand) {
   };
 }
 
-export default function BrandProfile({ brand, teamMembers = [], callLogs = [], tags = [], allTagNames = [] }) {
+export default function BrandProfile({ brand, teamMembers = [], timeline = [], tags = [], allTagNames = [] }) {
   const [form, setForm] = useState(() => toFormState(brand));
-  const [noteDraft, setNoteDraft] = useState("");
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -87,16 +87,6 @@ export default function BrandProfile({ brand, teamMembers = [], callLogs = [], t
     startTransition(async () => {
       const result = await updateBrandStatus(brand.id, status);
       if (!result?.ok) setError(result?.error || "That didn't save. Try again.");
-    });
-  };
-
-  const submitNote = () => {
-    const text = noteDraft.trim();
-    if (!text) return;
-    startTransition(async () => {
-      const result = await addCallLog("brand", brand.id, text);
-      if (result?.ok) setNoteDraft("");
-      else setError(result?.error || "That didn't save. Try again.");
     });
   };
 
@@ -251,43 +241,8 @@ export default function BrandProfile({ brand, teamMembers = [], callLogs = [], t
         {saved && <span className="text-xs text-emerald-400">Saved</span>}
       </div>
 
-      <Section title="Call log">
-        <div className="mb-2 flex gap-2">
-          <input
-            className="input-sm flex-1"
-            value={noteDraft}
-            onChange={(e) => setNoteDraft(e.target.value)}
-            placeholder="Log what happened..."
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                submitNote();
-              }
-            }}
-          />
-          <button
-            onClick={submitNote}
-            disabled={pending || !noteDraft.trim()}
-            className="shrink-0 rounded-md bg-amber-500 px-3 text-xs font-medium text-slate-950 transition-colors hover:bg-amber-400 disabled:opacity-50"
-          >
-            Add
-          </button>
-        </div>
-        {callLogs.length === 0 ? (
-          <p className="text-xs text-slate-600">No call notes yet.</p>
-        ) : (
-          <div className="max-h-64 space-y-1.5 overflow-y-auto">
-            {callLogs.map((c) => (
-              <div key={c.id} className="flex gap-2 text-sm text-slate-300">
-                <Clock size={12} className="mt-1 shrink-0 text-slate-600" />
-                <div className="min-w-0">
-                  <span className="break-words">{c.text}</span>
-                  <TimeAgo ts={c.created_at} className="ml-2 text-xs text-slate-600" />
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+      <Section title="Activity">
+        <Timeline subjectType="brand" subjectId={brand.id} timeline={timeline} />
       </Section>
     </div>
   );
