@@ -2,9 +2,10 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { ArrowLeft, Clock, Plus, X } from "lucide-react";
+import { ArrowLeft, Archive, ArchiveRestore, Clock, Plus, X } from "lucide-react";
 import {
   addCallLog,
+  setCreatorArchived,
   updateCreator,
   updateCreatorOnboardingStatus,
   updateCreatorVettingStatus,
@@ -44,6 +45,9 @@ function toFormState(creator) {
     lastContactDate: creator.last_contact_date || "",
     nextFollowUpDate: creator.next_follow_up_date || "",
     totalEarnings: creator.total_earnings ?? "",
+    preferredContactMethod: creator.preferred_contact_method || "",
+    followUpPriority: creator.follow_up_priority || "",
+    notes: creator.notes || "",
   };
 }
 
@@ -70,6 +74,13 @@ export default function CreatorProfile({ creator, teamMembers = [], callLogs = [
 
   const removePlatformRow = (i) =>
     setForm((f) => ({ ...f, platformLinks: f.platformLinks.filter((_, idx) => idx !== i) }));
+
+  const toggleArchived = () => {
+    startTransition(async () => {
+      const result = await setCreatorArchived(creator.id, !creator.is_archived);
+      if (!result?.ok) setError(result?.error || "That didn't save. Try again.");
+    });
+  };
 
   const save = () => {
     setError("");
@@ -116,12 +127,19 @@ export default function CreatorProfile({ creator, teamMembers = [], callLogs = [
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-lg font-semibold text-white">{creator.name}</h1>
+          <h1 className="flex items-center gap-2 text-lg font-semibold text-white">
+            {creator.name}
+            {creator.is_archived && (
+              <span className="rounded border border-slate-700 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-500">
+                Archived
+              </span>
+            )}
+          </h1>
           <p className="text-xs text-slate-500">
             Logged by {creator.logged_by || "—"} · Updated <TimeAgo ts={creator.updated_at} />
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <select
             className="input-sm"
             value={creator.vetting_status}
@@ -142,6 +160,15 @@ export default function CreatorProfile({ creator, teamMembers = [], callLogs = [
               <option key={s.value} value={s.value}>{s.label}</option>
             ))}
           </select>
+          <button
+            onClick={toggleArchived}
+            disabled={pending}
+            title={creator.is_archived ? "Restore to active views" : "Hide from active views"}
+            className="flex items-center gap-1.5 rounded-md border border-slate-700 px-2.5 py-1.5 text-xs text-slate-400 transition-colors hover:bg-slate-900 hover:text-slate-200 disabled:opacity-50"
+          >
+            {creator.is_archived ? <ArchiveRestore size={14} /> : <Archive size={14} />}
+            {creator.is_archived ? "Restore" : "Archive"}
+          </button>
         </div>
       </div>
 
@@ -151,6 +178,7 @@ export default function CreatorProfile({ creator, teamMembers = [], callLogs = [
           <Field label="Contact info" required><input className="input" value={form.contact} onChange={set("contact")} placeholder="email or phone" /></Field>
           <Field label="Location"><input className="input" value={form.location} onChange={set("location")} /></Field>
           <Field label="Portfolio / media kit link"><input className="input" value={form.portfolioUrl} onChange={set("portfolioUrl")} /></Field>
+          <Field label="Preferred contact method"><input className="input" value={form.preferredContactMethod} onChange={set("preferredContactMethod")} placeholder="e.g. email, DM, phone" /></Field>
         </Grid>
         <label className="mt-3 flex items-center gap-2 text-sm text-slate-300">
           <input type="checkbox" checked={form.ageConfirmed} onChange={setChecked("ageConfirmed")} />
@@ -251,8 +279,22 @@ export default function CreatorProfile({ creator, teamMembers = [], callLogs = [
           </Field>
           <Field label="Last contact"><input className="input" type="date" value={form.lastContactDate} onChange={set("lastContactDate")} /></Field>
           <Field label="Next follow-up"><input className="input" type="date" value={form.nextFollowUpDate} onChange={set("nextFollowUpDate")} /></Field>
+          <Field label="Follow-up priority">
+            <select className="input" value={form.followUpPriority} onChange={set("followUpPriority")}>
+              <option value="">None</option>
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+          </Field>
           <Field label="Total earnings through Nexus"><input className="input" type="number" value={form.totalEarnings} onChange={set("totalEarnings")} /></Field>
         </Grid>
+      </Section>
+
+      <Section title="Notes">
+        <Field label="General notes">
+          <textarea className="input min-h-[60px]" value={form.notes} onChange={set("notes")} />
+        </Field>
       </Section>
 
       {error && <p className="text-sm text-red-400">{error}</p>}
