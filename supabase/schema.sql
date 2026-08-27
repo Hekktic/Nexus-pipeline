@@ -113,6 +113,23 @@ alter table public.call_logs add constraint call_logs_subject_type_check
 create index if not exists call_logs_subject_idx on public.call_logs (subject_type, subject_id, created_at desc);
 
 -- -----------------------------------------------------------------------------
+-- team_members: a simple roster for ownership fields (Contacts, Deals,
+-- Campaigns, Tasks). Not tied to login — there's still only the one shared
+-- password — this just gives "who's responsible for this" a real list
+-- instead of freeform text, so it's ready for real per-user auth later.
+-- -----------------------------------------------------------------------------
+create table if not exists public.team_members (
+  id           uuid primary key default gen_random_uuid(),
+  display_name text not null,
+  role         text,
+  is_active    boolean not null default true,
+  created_at   timestamptz not null default now(),
+  updated_at   timestamptz not null default now()
+);
+
+create index if not exists team_members_is_active_idx on public.team_members (is_active);
+
+-- -----------------------------------------------------------------------------
 -- Keep updated_at honest — the pipeline sorts on it.
 -- -----------------------------------------------------------------------------
 create or replace function public.touch_updated_at()
@@ -133,6 +150,11 @@ create trigger brands_touch_updated_at
 drop trigger if exists creators_touch_updated_at on public.creators;
 create trigger creators_touch_updated_at
   before update on public.creators
+  for each row execute function public.touch_updated_at();
+
+drop trigger if exists team_members_touch_updated_at on public.team_members;
+create trigger team_members_touch_updated_at
+  before update on public.team_members
   for each row execute function public.touch_updated_at();
 
 -- A new call note counts as activity on whichever brand or creator it's on.
@@ -162,9 +184,10 @@ create trigger call_logs_touch_subject
 -- to restrict by, so anyone holding the anon key (i.e. this app, once past
 -- the shared password) can read and write freely.
 -- =============================================================================
-alter table public.brands    enable row level security;
-alter table public.creators  enable row level security;
-alter table public.call_logs enable row level security;
+alter table public.brands       enable row level security;
+alter table public.creators     enable row level security;
+alter table public.call_logs    enable row level security;
+alter table public.team_members enable row level security;
 
 drop policy if exists "brands full access" on public.brands;
 create policy "brands full access"
@@ -183,6 +206,13 @@ create policy "creators full access"
 drop policy if exists "call logs full access" on public.call_logs;
 create policy "call logs full access"
   on public.call_logs for all
+  to anon
+  using (true)
+  with check (true);
+
+drop policy if exists "team members full access" on public.team_members;
+create policy "team members full access"
+  on public.team_members for all
   to anon
   using (true)
   with check (true);
