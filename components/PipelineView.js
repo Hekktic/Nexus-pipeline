@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import { Download, Search } from "lucide-react";
 import PipelineCard from "@/components/PipelineCard";
+import { downloadCSV, toCSV } from "@/lib/csv";
 import {
   BRAND_STATUS_OPTIONS,
   ONBOARDING_STATUS_OPTIONS,
@@ -36,6 +37,22 @@ export default function PipelineView({ entries = [], allTagNames = [] }) {
       );
     });
   }, [entries, query, typeFilter, brandStatusFilter, vettingFilter, onboardingFilter, tagFilter]);
+
+  const exportCSV = () => {
+    const rows = filtered.map((e) => ({
+      type: e.kind,
+      name: e.name,
+      contact: e.contact,
+      category: e.category || "",
+      status: e.kind === "brand" ? e.status : "",
+      vetting_status: e.kind === "creator" ? e.vetting_status : "",
+      onboarding_status: e.kind === "creator" ? e.onboarding_status : "",
+      logged_by: e.logged_by || "",
+      tags: (e.tags || []).map((t) => t.name).join("; "),
+      updated_at: e.updated_at,
+    }));
+    downloadCSV(`contacts-${new Date().toISOString().slice(0, 10)}.csv`, toCSV(rows));
+  };
 
   return (
     <div className="space-y-4">
@@ -121,9 +138,19 @@ export default function PipelineView({ entries = [], allTagNames = [] }) {
         )}
       </div>
 
-      <p className="text-xs text-slate-500">
-        {filtered.length} of {entries.length} contacts
-      </p>
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-slate-500">
+          {filtered.length} of {entries.length} contacts
+        </p>
+        {filtered.length > 0 && (
+          <button
+            onClick={exportCSV}
+            className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200"
+          >
+            <Download size={12} /> Export CSV
+          </button>
+        )}
+      </div>
 
       {filtered.length === 0 ? (
         <div className="py-10 text-center text-sm text-slate-500">

@@ -2,8 +2,9 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Search } from "lucide-react";
+import { Download, Search } from "lucide-react";
 import TimeAgo from "@/components/TimeAgo";
+import { downloadCSV, toCSV } from "@/lib/csv";
 import { BRAND_STATUS_OPTIONS, brandStatusMeta } from "@/lib/constants";
 
 export default function BrandsListView({ brands = [] }) {
@@ -26,6 +27,22 @@ export default function BrandsListView({ brands = [] }) {
   }, [brands, query, statusFilter, showArchived]);
 
   const archivedCount = brands.filter((b) => b.is_archived).length;
+
+  const exportCSV = () => {
+    const rows = filtered.map((b) => ({
+      name: b.name,
+      contact: b.contact,
+      website: b.website || "",
+      category: b.category || "",
+      status: b.status,
+      owner: b.owner?.display_name || "",
+      logged_by: b.logged_by || "",
+      tags: (b.tags || []).map((t) => t.name).join("; "),
+      is_archived: b.is_archived ? "yes" : "no",
+      updated_at: b.updated_at,
+    }));
+    downloadCSV(`brands-${new Date().toISOString().slice(0, 10)}.csv`, toCSV(rows));
+  };
 
   return (
     <div className="space-y-4">
@@ -63,9 +80,19 @@ export default function BrandsListView({ brands = [] }) {
         )}
       </div>
 
-      <p className="text-xs text-slate-500">
-        {filtered.length} of {brands.length} brands
-      </p>
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-slate-500">
+          {filtered.length} of {brands.length} brands
+        </p>
+        {filtered.length > 0 && (
+          <button
+            onClick={exportCSV}
+            className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200"
+          >
+            <Download size={12} /> Export CSV
+          </button>
+        )}
+      </div>
 
       {filtered.length === 0 ? (
         <div className="py-10 text-center text-sm text-slate-500">
