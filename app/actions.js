@@ -14,6 +14,8 @@ import {
 } from "@/lib/constants";
 import { SESSION_COOKIE, SESSION_MAX_AGE } from "@/lib/session-cookie-name";
 import { checkPassword, sessionToken } from "@/lib/session";
+import { computeAdvanced } from "@/lib/calculators/advanced";
+import { computeQuick } from "@/lib/calculators/quick";
 
 const MAX_SHORT = 200;
 const MAX_LONG = 2000;
@@ -583,5 +585,116 @@ export async function removeTag(contactTagId) {
   revalidatePath("/creators");
   revalidatePath("/pipeline");
   revalidatePath("/contacts");
+  return { ok: true };
+}
+
+/** Recomputes outputs from inputs server-side — never trusts client-sent numbers for what gets stored. */
+function computeScenarioOutputs(mode, inputs) {
+  if (mode === "quick") return computeQuick(inputs);
+  if (mode === "advanced") return computeAdvanced(inputs);
+  return { ok: false, errors: ["Unknown calculator mode."], outputs: null };
+}
+
+export async function createProfitScenario(input) {
+  const ctx = await requireSession();
+  if (ctx.error) return fail(ctx.error);
+
+  const name = clean(input?.name, 120);
+  if (!name) return fail("Give this scenario a name.");
+
+  const mode = input?.mode === "advanced" ? "advanced" : "quick";
+  const { ok, errors, outputs } = computeScenarioOutputs(mode, input?.inputs || {});
+  if (!ok) return fail(errors[0] || "Couldn't calculate that scenario.");
+
+  const { data: created, error } = await ctx.supabase
+    .from("profit_scenarios")
+    .insert({
+      name,
+      mode,
+      brand_id: cleanOwnerId(input?.brandId),
+      creator_id: cleanOwnerId(input?.creatorId),
+      inputs: input?.inputs || {},
+      outputs,
+      created_by: clean(input?.createdBy) || null,
+    })
+    .select("id")
+    .single();
+
+  if (error) return fail(error.message);
+
+  revalidatePath("/calculator");
+  return { ok: true, id: created.id, outputs };
+}
+
+export async function updateProfitScenario(scenarioId, input) {
+  const ctx = await requireSession();
+  if (ctx.error) return fail(ctx.error);
+
+  const name = clean(input?.name, 120);
+  if (!name) return fail("Give this scenario a name.");
+
+  const mode = input?.mode === "advanced" ? "advanced" : "quick";
+  const { ok, errors, outputs } = computeScenarioOutputs(mode, input?.inputs || {});
+  if (!ok) return fail(errors[0] || "Couldn't calculate that scenario.");
+
+  const { error } = await ctx.supabase
+    .from("profit_scenarios")
+    .update({
+      name,
+      mode,
+      brand_id: cleanOwnerId(input?.brandId),
+      creator_id: cleanOwnerId(input?.creatorId),
+      inputs: input?.inputs || {},
+      outputs,
+    })
+    .eq("id", scenarioId);
+
+  if (error) return fail(error.message);
+
+  revalidatePath("/calculator");
+  return { ok: true, outputs };
+}
+
+export async function duplicateProfitScenario(scenarioId) {
+  const ctx = await requireSession();
+  if (ctx.error) return fail(ctx.error);
+
+  const { data: original, error: findError } = await ctx.supabase
+    .from("profit_scenarios")
+    .select("*")
+    .eq("id", scenarioId)
+    .maybeSingle();
+
+  if (findError) return fail(findError.message);
+  if (!original) return fail("That scenario no longer exists.");
+
+  const { error } = await ctx.supabase.from("profit_scenarios").insert({
+    name: `${original.name} (copy)`,
+    mode: original.mode,
+    brand_id: original.brand_id,
+    creator_id: original.creator_id,
+    inputs: original.inputs,
+    outputs: original.outputs,
+    created_by: original.created_by,
+  });
+
+  if (error) return fail(error.message);
+
+  revalidatePath("/calculator");
+  return { ok: true };
+}
+
+export async function setProfitScenarioArchived(scenarioId, isArchived) {
+  const ctx = await requireSession();
+  if (ctx.error) return fail(ctx.error);
+
+  const { error } = await ctx.supabase
+    .from("profit_scenarios")
+    .update({ status: isArchived ? "archived" : "draft" })
+    .eq("id", scenarioId);
+
+  if (error) return fail(error.message);
+
+  revalidatePath("/calculator");
   return { ok: true };
 }

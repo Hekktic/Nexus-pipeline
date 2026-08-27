@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   BarChart3,
   Building2,
+  Calculator,
   CheckSquare,
   ChevronLeft,
   ChevronRight,
@@ -31,6 +32,7 @@ const NAV = [
   { href: "/creators", label: "Creators", icon: Sparkles },
   { href: "/pipeline", label: "Pipeline", icon: Kanban },
   { href: "/campaigns", label: "Campaigns", icon: Megaphone },
+  { href: "/calculator", label: "Calculator", icon: Calculator },
   { href: "/tasks", label: "Tasks", icon: CheckSquare },
   { href: "/documents", label: "Documents", icon: FileText },
   { href: "/finance", label: "Finance", icon: DollarSign },
