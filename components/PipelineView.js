@@ -9,12 +9,13 @@ import {
   VETTING_STATUS_OPTIONS,
 } from "@/lib/constants";
 
-export default function PipelineView({ entries = [] }) {
+export default function PipelineView({ entries = [], allTagNames = [] }) {
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [brandStatusFilter, setBrandStatusFilter] = useState("all");
   const [vettingFilter, setVettingFilter] = useState("all");
   const [onboardingFilter, setOnboardingFilter] = useState("all");
+  const [tagFilter, setTagFilter] = useState("all");
   const [expanded, setExpanded] = useState(null);
 
   const filtered = useMemo(() => {
@@ -25,6 +26,7 @@ export default function PipelineView({ entries = [] }) {
       if (e.kind === "brand" && brandStatusFilter !== "all" && e.status !== brandStatusFilter) return false;
       if (e.kind === "creator" && vettingFilter !== "all" && e.vetting_status !== vettingFilter) return false;
       if (e.kind === "creator" && onboardingFilter !== "all" && e.onboarding_status !== onboardingFilter) return false;
+      if (tagFilter !== "all" && !(e.tags || []).some((t) => t.name === tagFilter)) return false;
       if (!q) return true;
 
       return (
@@ -33,7 +35,7 @@ export default function PipelineView({ entries = [] }) {
         (e.category || "").toLowerCase().includes(q)
       );
     });
-  }, [entries, query, typeFilter, brandStatusFilter, vettingFilter, onboardingFilter]);
+  }, [entries, query, typeFilter, brandStatusFilter, vettingFilter, onboardingFilter, tagFilter]);
 
   return (
     <div className="space-y-4">
@@ -101,6 +103,21 @@ export default function PipelineView({ entries = [] }) {
               ))}
             </select>
           </>
+        )}
+
+        {allTagNames.length > 0 && (
+          <select
+            className="input w-auto"
+            value={tagFilter}
+            onChange={(e) => setTagFilter(e.target.value)}
+          >
+            <option value="all">All tags</option>
+            {allTagNames.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
         )}
       </div>
 

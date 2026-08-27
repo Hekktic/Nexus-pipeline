@@ -430,3 +430,61 @@ export async function addCallLog(subjectType, subjectId, text) {
   revalidatePath("/pipeline");
   return { ok: true };
 }
+
+/** Attaches a tag to a brand or creator, creating the tag first if it doesn't exist yet (case-insensitive match). */
+export async function addTag(subjectType, subjectId, tagName) {
+  const ctx = await requireSession();
+  if (ctx.error) return fail(ctx.error);
+
+  if (subjectType !== "brand" && subjectType !== "creator") return fail("Unknown subject.");
+
+  const name = clean(tagName, 50);
+  if (!name) return fail("Enter a tag name.");
+
+  const { data: allTags, error: findError } = await ctx.supabase.from("tags").select("id, name");
+  if (findError) return fail(findError.message);
+
+  let tag = (allTags || []).find((t) => t.name.toLowerCase() === name.toLowerCase());
+
+  if (!tag) {
+    const { data: created, error: createError } = await ctx.supabase
+      .from("tags")
+      .insert({ name })
+      .select("id, name")
+      .single();
+    if (createError) return fail(createError.message);
+    tag = created;
+  }
+
+  const { error } = await ctx.supabase.from("contact_tags").insert({
+    tag_id: tag.id,
+    subject_type: subjectType,
+    subject_id: subjectId,
+  });
+
+  // 23505 = unique_violation — this subject already has this tag, which is fine, not an error.
+  if (error && error.code !== "23505") return fail(error.message);
+
+  revalidatePath("/brands");
+  revalidatePath("/creators");
+  revalidatePath(`/${subjectType}s/${subjectId}`);
+  revalidatePath("/pipeline");
+  revalidatePath("/contacts");
+  return { ok: true, tag };
+}
+
+/** Removes one tag from one subject (by the contact_tags row id, not the tag id — a tag can stay attached to other records). */
+export async function removeTag(contactTagId) {
+  const ctx = await requireSession();
+  if (ctx.error) return fail(ctx.error);
+
+  const { error } = await ctx.supabase.from("contact_tags").delete().eq("id", contactTagId);
+
+  if (error) return fail(error.message);
+
+  revalidatePath("/brands");
+  revalidatePath("/creators");
+  revalidatePath("/pipeline");
+  revalidatePath("/contacts");
+  return { ok: true };
+}
