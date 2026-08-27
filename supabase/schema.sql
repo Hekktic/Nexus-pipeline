@@ -254,6 +254,32 @@ create index if not exists activities_subject_idx
   on public.activities (subject_type, subject_id, created_at desc);
 
 -- -----------------------------------------------------------------------------
+-- profit_scenarios: saved runs of the Profit Calculator (Quick or Advanced
+-- mode). Both the inputs and the calculated outputs are stored — outputs are
+-- never kept without the assumptions that produced them, so a saved scenario
+-- stays meaningful even after the calculation logic evolves. Optionally
+-- linked to a brand and/or creator; campaign linkage comes later, once
+-- campaigns exist.
+-- -----------------------------------------------------------------------------
+create table if not exists public.profit_scenarios (
+  id         uuid primary key default gen_random_uuid(),
+  name       text not null,
+  mode       text not null check (mode in ('quick', 'advanced')),
+  brand_id   uuid references public.brands (id) on delete set null,
+  creator_id uuid references public.creators (id) on delete set null,
+  inputs     jsonb not null,
+  outputs    jsonb not null,
+  status     text not null default 'draft' check (status in ('draft', 'archived')),
+  created_by text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists profit_scenarios_brand_id_idx   on public.profit_scenarios (brand_id);
+create index if not exists profit_scenarios_creator_id_idx on public.profit_scenarios (creator_id);
+create index if not exists profit_scenarios_status_idx     on public.profit_scenarios (status);
+
+-- -----------------------------------------------------------------------------
 -- Keep updated_at honest — the pipeline sorts on it.
 -- -----------------------------------------------------------------------------
 create or replace function public.touch_updated_at()
@@ -279,6 +305,11 @@ create trigger creators_touch_updated_at
 drop trigger if exists team_members_touch_updated_at on public.team_members;
 create trigger team_members_touch_updated_at
   before update on public.team_members
+  for each row execute function public.touch_updated_at();
+
+drop trigger if exists profit_scenarios_touch_updated_at on public.profit_scenarios;
+create trigger profit_scenarios_touch_updated_at
+  before update on public.profit_scenarios
   for each row execute function public.touch_updated_at();
 
 -- A new call note counts as activity on whichever brand or creator it's on.
@@ -314,7 +345,8 @@ alter table public.call_logs    enable row level security;
 alter table public.team_members enable row level security;
 alter table public.tags         enable row level security;
 alter table public.contact_tags enable row level security;
-alter table public.activities   enable row level security;
+alter table public.activities      enable row level security;
+alter table public.profit_scenarios enable row level security;
 
 drop policy if exists "brands full access" on public.brands;
 create policy "brands full access"
@@ -361,6 +393,13 @@ create policy "contact tags full access"
 drop policy if exists "activities full access" on public.activities;
 create policy "activities full access"
   on public.activities for all
+  to anon
+  using (true)
+  with check (true);
+
+drop policy if exists "profit scenarios full access" on public.profit_scenarios;
+create policy "profit scenarios full access"
+  on public.profit_scenarios for all
   to anon
   using (true)
   with check (true);
