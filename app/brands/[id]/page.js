@@ -6,6 +6,7 @@ import SetupNotice from "@/components/SetupNotice";
 import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { fetchTagsFor } from "@/lib/tags";
+import { fetchTimelineFor } from "@/lib/timeline";
 
 export const dynamic = "force-dynamic";
 
@@ -15,18 +16,13 @@ export default async function BrandDetailPage({ params }) {
   const { id } = await params;
   const supabase = createClient();
 
-  const [{ data: brand, error: brandError }, { data: teamMembers }, { data: callLogs }, { data: allTags }, { tags }] =
+  const [{ data: brand, error: brandError }, { data: teamMembers }, { data: allTags }, { tags }, { timeline }] =
     await Promise.all([
       supabase.from("brands").select("*").eq("id", id).maybeSingle(),
       supabase.from("team_members").select("id, display_name").eq("is_active", true).order("display_name"),
-      supabase
-        .from("call_logs")
-        .select("*")
-        .eq("subject_type", "brand")
-        .eq("subject_id", id)
-        .order("created_at", { ascending: false }),
       supabase.from("tags").select("name").order("name"),
       fetchTagsFor(supabase, "brand", id),
+      fetchTimelineFor(supabase, "brand", id),
     ]);
 
   if (brandError) {
@@ -44,7 +40,7 @@ export default async function BrandDetailPage({ params }) {
       <BrandProfile
         brand={brand}
         teamMembers={teamMembers ?? []}
-        callLogs={callLogs ?? []}
+        timeline={timeline}
         tags={tags}
         allTagNames={(allTags ?? []).map((t) => t.name)}
       />

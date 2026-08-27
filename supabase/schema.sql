@@ -236,6 +236,24 @@ create index if not exists contact_tags_subject_idx
   on public.contact_tags (subject_type, subject_id);
 
 -- -----------------------------------------------------------------------------
+-- activities: a log entry for anything worth showing on a brand/creator's
+-- timeline besides a call note (creation, status changes, archiving, tags).
+-- Call notes themselves stay in call_logs — the timeline view in the app
+-- merges the two by created_at rather than duplicating notes in here.
+-- -----------------------------------------------------------------------------
+create table if not exists public.activities (
+  id           uuid primary key default gen_random_uuid(),
+  subject_type text not null check (subject_type in ('brand', 'creator')),
+  subject_id   uuid not null,
+  type         text not null,
+  description  text not null,
+  created_at   timestamptz not null default now()
+);
+
+create index if not exists activities_subject_idx
+  on public.activities (subject_type, subject_id, created_at desc);
+
+-- -----------------------------------------------------------------------------
 -- Keep updated_at honest — the pipeline sorts on it.
 -- -----------------------------------------------------------------------------
 create or replace function public.touch_updated_at()
@@ -296,6 +314,7 @@ alter table public.call_logs    enable row level security;
 alter table public.team_members enable row level security;
 alter table public.tags         enable row level security;
 alter table public.contact_tags enable row level security;
+alter table public.activities   enable row level security;
 
 drop policy if exists "brands full access" on public.brands;
 create policy "brands full access"
@@ -335,6 +354,13 @@ create policy "tags full access"
 drop policy if exists "contact tags full access" on public.contact_tags;
 create policy "contact tags full access"
   on public.contact_tags for all
+  to anon
+  using (true)
+  with check (true);
+
+drop policy if exists "activities full access" on public.activities;
+create policy "activities full access"
+  on public.activities for all
   to anon
   using (true)
   with check (true);

@@ -8,6 +8,9 @@ import {
   BRAND_STATUS_VALUES,
   ONBOARDING_STATUS_VALUES,
   VETTING_STATUS_VALUES,
+  brandStatusMeta,
+  onboardingStatusMeta,
+  vettingStatusMeta,
 } from "@/lib/constants";
 import { SESSION_COOKIE, SESSION_MAX_AGE } from "@/lib/session-cookie-name";
 import { checkPassword, sessionToken } from "@/lib/session";
@@ -61,6 +64,24 @@ function cleanLinkMap(rows) {
 }
 
 /**
+ * Best-effort timeline entry — never blocks or fails the action it's called
+ * from. A missed activity log is far less important than the actual save
+ * succeeding.
+ */
+async function logActivity(supabase, subjectType, subjectId, type, description) {
+  try {
+    await supabase.from("activities").insert({
+      subject_type: subjectType,
+      subject_id: subjectId,
+      type,
+      description,
+    });
+  } catch {
+    // Non-critical — swallow it.
+  }
+}
+
+/**
  * Every action re-checks the session cookie server-side. Middleware already
  * keeps signed-out visitors off these routes; this is just cheap insurance.
  */
@@ -106,18 +127,24 @@ export async function createBrand(input) {
   if (!contact) return fail("Enter contact info.");
   if (!loggedBy) return fail("Enter your name.");
 
-  const { error } = await ctx.supabase.from("brands").insert({
-    name,
-    contact,
-    website: clean(input?.website) || null,
-    category: clean(input?.category) || null,
-    margin_notes: clean(input?.marginNotes, MAX_LONG) || null,
-    fulfillment_notes: clean(input?.fulfillmentNotes, MAX_LONG) || null,
-    logged_by: loggedBy,
-    status: "prospect",
-  });
+  const { data: created, error } = await ctx.supabase
+    .from("brands")
+    .insert({
+      name,
+      contact,
+      website: clean(input?.website) || null,
+      category: clean(input?.category) || null,
+      margin_notes: clean(input?.marginNotes, MAX_LONG) || null,
+      fulfillment_notes: clean(input?.fulfillmentNotes, MAX_LONG) || null,
+      logged_by: loggedBy,
+      status: "prospect",
+    })
+    .select("id")
+    .single();
 
   if (error) return fail(error.message);
+
+  await logActivity(ctx.supabase, "brand", created.id, "created", `Added by ${loggedBy}`);
 
   revalidatePath("/log");
   revalidatePath("/pipeline");
@@ -143,19 +170,25 @@ export async function createCreator(input) {
     if (platform) platforms[platform] = followers;
   }
 
-  const { error } = await ctx.supabase.from("creators").insert({
-    name,
-    contact,
-    platforms,
-    category: clean(input?.category) || null,
-    audience_demographics: clean(input?.audienceDemographics, MAX_LONG) || null,
-    pricing_expectations: clean(input?.pricingExpectations, MAX_LONG) || null,
-    logged_by: loggedBy,
-    vetting_status: "not_reviewed",
-    onboarding_status: "applied",
-  });
+  const { data: created, error } = await ctx.supabase
+    .from("creators")
+    .insert({
+      name,
+      contact,
+      platforms,
+      category: clean(input?.category) || null,
+      audience_demographics: clean(input?.audienceDemographics, MAX_LONG) || null,
+      pricing_expectations: clean(input?.pricingExpectations, MAX_LONG) || null,
+      logged_by: loggedBy,
+      vetting_status: "not_reviewed",
+      onboarding_status: "applied",
+    })
+    .select("id")
+    .single();
 
   if (error) return fail(error.message);
+
+  await logActivity(ctx.supabase, "creator", created.id, "created", `Added by ${loggedBy}`);
 
   revalidatePath("/log");
   revalidatePath("/pipeline");
@@ -206,6 +239,8 @@ export async function updateBrand(brandId, input) {
     .eq("id", brandId);
 
   if (error) return fail(error.message);
+
+  await logActivity(ctx.supabase, "brand", brandId, "profile_updated", "Profile updated");
 
   revalidatePath("/brands");
   revalidatePath(`/brands/${brandId}`);
@@ -261,6 +296,8 @@ export async function updateCreator(creatorId, input) {
 
   if (error) return fail(error.message);
 
+  await logActivity(ctx.supabase, "creator", creatorId, "profile_updated", "Profile updated");
+
   revalidatePath("/creators");
   revalidatePath(`/creators/${creatorId}`);
   revalidatePath("/pipeline");
@@ -280,6 +317,14 @@ export async function setBrandArchived(brandId, isArchived) {
 
   if (error) return fail(error.message);
 
+  await logActivity(
+    ctx.supabase,
+    "brand",
+    brandId,
+    isArchived ? "archived" : "restored",
+    isArchived ? "Archived" : "Restored from archive"
+  );
+
   revalidatePath("/brands");
   revalidatePath(`/brands/${brandId}`);
   revalidatePath("/pipeline");
@@ -298,6 +343,14 @@ export async function setCreatorArchived(creatorId, isArchived) {
     .eq("id", creatorId);
 
   if (error) return fail(error.message);
+
+  await logActivity(
+    ctx.supabase,
+    "creator",
+    creatorId,
+    isArchived ? "archived" : "restored",
+    isArchived ? "Archived" : "Restored from archive"
+  );
 
   revalidatePath("/creators");
   revalidatePath(`/creators/${creatorId}`);
@@ -319,6 +372,14 @@ export async function updateBrandStatus(brandId, status) {
 
   if (error) return fail(error.message);
 
+  await logActivity(
+    ctx.supabase,
+    "brand",
+    brandId,
+    "status_changed",
+    `Status changed to ${brandStatusMeta(status).label}`
+  );
+
   revalidatePath("/pipeline");
   return { ok: true };
 }
@@ -336,6 +397,14 @@ export async function updateCreatorVettingStatus(creatorId, status) {
 
   if (error) return fail(error.message);
 
+  await logActivity(
+    ctx.supabase,
+    "creator",
+    creatorId,
+    "vetting_status_changed",
+    `Vetting status changed to ${vettingStatusMeta(status).label}`
+  );
+
   revalidatePath("/pipeline");
   return { ok: true };
 }
@@ -352,6 +421,14 @@ export async function updateCreatorOnboardingStatus(creatorId, status) {
     .eq("id", creatorId);
 
   if (error) return fail(error.message);
+
+  await logActivity(
+    ctx.supabase,
+    "creator",
+    creatorId,
+    "onboarding_status_changed",
+    `Onboarding status changed to ${onboardingStatusMeta(status).label}`
+  );
 
   revalidatePath("/pipeline");
   return { ok: true };
@@ -465,6 +542,10 @@ export async function addTag(subjectType, subjectId, tagName) {
   // 23505 = unique_violation — this subject already has this tag, which is fine, not an error.
   if (error && error.code !== "23505") return fail(error.message);
 
+  if (!error) {
+    await logActivity(ctx.supabase, subjectType, subjectId, "tag_added", `Tagged "${tag.name}"`);
+  }
+
   revalidatePath("/brands");
   revalidatePath("/creators");
   revalidatePath(`/${subjectType}s/${subjectId}`);
@@ -478,9 +559,25 @@ export async function removeTag(contactTagId) {
   const ctx = await requireSession();
   if (ctx.error) return fail(ctx.error);
 
+  const { data: row, error: findError } = await ctx.supabase
+    .from("contact_tags")
+    .select("subject_type, subject_id, tag:tags ( name )")
+    .eq("id", contactTagId)
+    .maybeSingle();
+
   const { error } = await ctx.supabase.from("contact_tags").delete().eq("id", contactTagId);
 
   if (error) return fail(error.message);
+
+  if (!findError && row) {
+    await logActivity(
+      ctx.supabase,
+      row.subject_type,
+      row.subject_id,
+      "tag_removed",
+      `Removed tag "${row.tag?.name ?? ""}"`
+    );
+  }
 
   revalidatePath("/brands");
   revalidatePath("/creators");
