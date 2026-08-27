@@ -126,6 +126,18 @@ export default function CreatorsListView({ creators = [] }) {
                     {c.category || "no category"} · {c.contact}
                   </p>
                 </div>
+                {(c.tags || []).length > 0 && (
+                  <div className="hidden shrink-0 gap-1 md:flex">
+                    {c.tags.slice(0, 3).map((t) => (
+                      <span
+                        key={t.contactTagId}
+                        className="rounded-full border border-slate-700 px-2 py-0.5 text-[10px] text-slate-400"
+                      >
+                        {t.name}
+                      </span>
+                    ))}
+                  </div>
+                )}
                 {c.owner && (
                   <span className="hidden shrink-0 text-xs text-slate-500 sm:inline">
                     {c.owner.display_name}

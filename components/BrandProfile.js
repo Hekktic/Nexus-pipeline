@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, Archive, ArchiveRestore, Clock, Plus, X } from "lucide-react";
 import { addCallLog, setBrandArchived, updateBrand, updateBrandStatus } from "@/app/actions";
 import Field from "@/components/Field";
+import TagsEditor from "@/components/TagsEditor";
 import TimeAgo from "@/components/TimeAgo";
 import { BRAND_STATUS_OPTIONS } from "@/lib/constants";
 
@@ -41,7 +42,7 @@ function toFormState(brand) {
   };
 }
 
-export default function BrandProfile({ brand, teamMembers = [], callLogs = [] }) {
+export default function BrandProfile({ brand, teamMembers = [], callLogs = [], tags = [], allTagNames = [] }) {
   const [form, setForm] = useState(() => toFormState(brand));
   const [noteDraft, setNoteDraft] = useState("");
   const [error, setError] = useState("");
@@ -143,6 +144,8 @@ export default function BrandProfile({ brand, teamMembers = [], callLogs = [] })
           </button>
         </div>
       </div>
+
+      <TagsEditor subjectType="brand" subjectId={brand.id} tags={tags} allTagNames={allTagNames} />
 
       <Section title="Contact">
         <Grid>

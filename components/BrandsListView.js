@@ -101,6 +101,18 @@ export default function BrandsListView({ brands = [] }) {
                     {b.category || "no category"} · {b.contact}
                   </p>
                 </div>
+                {(b.tags || []).length > 0 && (
+                  <div className="hidden shrink-0 gap-1 md:flex">
+                    {b.tags.slice(0, 3).map((t) => (
+                      <span
+                        key={t.contactTagId}
+                        className="rounded-full border border-slate-700 px-2 py-0.5 text-[10px] text-slate-400"
+                      >
+                        {t.name}
+                      </span>
+                    ))}
+                  </div>
+                )}
                 {b.owner && (
                   <span className="hidden shrink-0 text-xs text-slate-500 sm:inline">
                     {b.owner.display_name}

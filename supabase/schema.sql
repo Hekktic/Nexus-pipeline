@@ -208,6 +208,34 @@ alter table public.call_logs add constraint call_logs_subject_type_check
 create index if not exists call_logs_subject_idx on public.call_logs (subject_type, subject_id, created_at desc);
 
 -- -----------------------------------------------------------------------------
+-- tags / contact_tags: free-form labels attachable to a brand or creator.
+-- contact_tags is the join table — subject_type/subject_id point at either
+-- table, same polymorphic approach as call_logs, checked in application
+-- code rather than a cross-table foreign key.
+-- -----------------------------------------------------------------------------
+create table if not exists public.tags (
+  id         uuid primary key default gen_random_uuid(),
+  name       text not null,
+  created_at timestamptz not null default now()
+);
+
+-- Case-insensitive uniqueness so "VIP" and "vip" can't both be created.
+create unique index if not exists tags_name_lower_idx on public.tags (lower(name));
+
+create table if not exists public.contact_tags (
+  id           uuid primary key default gen_random_uuid(),
+  tag_id       uuid not null references public.tags (id) on delete cascade,
+  subject_type text not null check (subject_type in ('brand', 'creator')),
+  subject_id   uuid not null,
+  created_at   timestamptz not null default now()
+);
+
+create unique index if not exists contact_tags_unique_idx
+  on public.contact_tags (tag_id, subject_type, subject_id);
+create index if not exists contact_tags_subject_idx
+  on public.contact_tags (subject_type, subject_id);
+
+-- -----------------------------------------------------------------------------
 -- Keep updated_at honest — the pipeline sorts on it.
 -- -----------------------------------------------------------------------------
 create or replace function public.touch_updated_at()
@@ -266,6 +294,8 @@ alter table public.brands       enable row level security;
 alter table public.creators     enable row level security;
 alter table public.call_logs    enable row level security;
 alter table public.team_members enable row level security;
+alter table public.tags         enable row level security;
+alter table public.contact_tags enable row level security;
 
 drop policy if exists "brands full access" on public.brands;
 create policy "brands full access"
@@ -291,6 +321,20 @@ create policy "call logs full access"
 drop policy if exists "team members full access" on public.team_members;
 create policy "team members full access"
   on public.team_members for all
+  to anon
+  using (true)
+  with check (true);
+
+drop policy if exists "tags full access" on public.tags;
+create policy "tags full access"
+  on public.tags for all
+  to anon
+  using (true)
+  with check (true);
+
+drop policy if exists "contact tags full access" on public.contact_tags;
+create policy "contact tags full access"
+  on public.contact_tags for all
   to anon
   using (true)
   with check (true);

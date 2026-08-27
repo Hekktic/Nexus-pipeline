@@ -11,6 +11,7 @@ import {
   updateCreatorVettingStatus,
 } from "@/app/actions";
 import Field from "@/components/Field";
+import TagsEditor from "@/components/TagsEditor";
 import TimeAgo from "@/components/TimeAgo";
 import { ONBOARDING_STATUS_OPTIONS, VETTING_STATUS_OPTIONS } from "@/lib/constants";
 
@@ -51,7 +52,7 @@ function toFormState(creator) {
   };
 }
 
-export default function CreatorProfile({ creator, teamMembers = [], callLogs = [] }) {
+export default function CreatorProfile({ creator, teamMembers = [], callLogs = [], tags = [], allTagNames = [] }) {
   const [form, setForm] = useState(() => toFormState(creator));
   const [noteDraft, setNoteDraft] = useState("");
   const [error, setError] = useState("");
@@ -171,6 +172,8 @@ export default function CreatorProfile({ creator, teamMembers = [], callLogs = [
           </button>
         </div>
       </div>
+
+      <TagsEditor subjectType="creator" subjectId={creator.id} tags={tags} allTagNames={allTagNames} />
 
       <Section title="Contact">
         <Grid>

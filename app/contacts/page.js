@@ -4,6 +4,7 @@ import PipelineView from "@/components/PipelineView";
 import SetupNotice from "@/components/SetupNotice";
 import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
+import { groupTagsBySubject } from "@/lib/tags";
 
 export const dynamic = "force-dynamic";
 
@@ -21,13 +22,17 @@ export default async function ContactsPage() {
     { data: brands, error: brandsError },
     { data: creators, error: creatorsError },
     { data: callLogs, error: callLogsError },
+    { data: contactTags, error: tagsError },
+    { data: allTags },
   ] = await Promise.all([
     supabase.from("brands").select("*").eq("is_archived", false).order("updated_at", { ascending: false }),
     supabase.from("creators").select("*").eq("is_archived", false).order("updated_at", { ascending: false }),
     supabase.from("call_logs").select("*").order("created_at", { ascending: false }),
+    supabase.from("contact_tags").select("id, subject_type, subject_id, tag:tags ( id, name )"),
+    supabase.from("tags").select("name").order("name"),
   ]);
 
-  const error = brandsError || creatorsError || callLogsError;
+  const error = brandsError || creatorsError || callLogsError || tagsError;
 
   if (error) {
     return (
@@ -46,22 +51,26 @@ export default async function ContactsPage() {
     logsBySubject.get(key).push(log);
   }
 
+  const tagsBySubject = groupTagsBySubject(contactTags);
+
   const entries = [
     ...(brands ?? []).map((b) => ({
       ...b,
       kind: "brand",
       call_logs: logsBySubject.get(`brand:${b.id}`) ?? [],
+      tags: tagsBySubject.get(`brand:${b.id}`) ?? [],
     })),
     ...(creators ?? []).map((c) => ({
       ...c,
       kind: "creator",
       call_logs: logsBySubject.get(`creator:${c.id}`) ?? [],
+      tags: tagsBySubject.get(`creator:${c.id}`) ?? [],
     })),
   ].sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
 
   return (
     <AppShell subtitle="Every brand and creator">
-      <PipelineView entries={entries} />
+      <PipelineView entries={entries} allTagNames={(allTags ?? []).map((t) => t.name)} />
     </AppShell>
   );
 }

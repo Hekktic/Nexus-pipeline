@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { ChevronDown, ChevronUp, Clock } from "lucide-react";
+import Link from "next/link";
+import { ChevronDown, ChevronUp, Clock, ExternalLink } from "lucide-react";
 import {
   addCallLog,
   updateBrandStatus,
@@ -88,6 +89,19 @@ export default function PipelineCard({ entry, expanded, onToggle }) {
           </p>
         </div>
 
+        {(entry.tags || []).length > 0 && (
+          <div className="hidden shrink-0 gap-1 md:flex">
+            {entry.tags.slice(0, 3).map((t) => (
+              <span
+                key={t.contactTagId}
+                className="rounded-full border border-slate-700 px-2 py-0.5 text-[10px] text-slate-400"
+              >
+                {t.name}
+              </span>
+            ))}
+          </div>
+        )}
+
         <TimeAgo
           ts={entry.updated_at}
           className="hidden shrink-0 text-xs text-slate-600 sm:inline"
@@ -102,6 +116,13 @@ export default function PipelineCard({ entry, expanded, onToggle }) {
 
       {expanded && (
         <div className="space-y-3 border-t border-slate-800 px-3 pb-3 pt-3">
+          <Link
+            href={`/${entry.kind}s/${entry.id}`}
+            className="flex items-center gap-1 text-xs text-amber-500 hover:text-amber-400"
+          >
+            View full profile <ExternalLink size={11} />
+          </Link>
+
           {isBrand ? (
             <BrandDetail entry={entry} pending={pending} onChangeStatus={changeBrandStatus} />
           ) : (
