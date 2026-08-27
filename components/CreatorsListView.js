@@ -15,10 +15,12 @@ export default function CreatorsListView({ creators = [] }) {
   const [query, setQuery] = useState("");
   const [vettingFilter, setVettingFilter] = useState("all");
   const [onboardingFilter, setOnboardingFilter] = useState("all");
+  const [showArchived, setShowArchived] = useState(false);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return creators.filter((c) => {
+      if (!showArchived && c.is_archived) return false;
       if (vettingFilter !== "all" && c.vetting_status !== vettingFilter) return false;
       if (onboardingFilter !== "all" && c.onboarding_status !== onboardingFilter) return false;
       if (!q) return true;
@@ -28,7 +30,9 @@ export default function CreatorsListView({ creators = [] }) {
         (c.category || "").toLowerCase().includes(q)
       );
     });
-  }, [creators, query, vettingFilter, onboardingFilter]);
+  }, [creators, query, vettingFilter, onboardingFilter, showArchived]);
+
+  const archivedCount = creators.filter((c) => c.is_archived).length;
 
   return (
     <div className="space-y-4">
@@ -66,6 +70,16 @@ export default function CreatorsListView({ creators = [] }) {
             </option>
           ))}
         </select>
+        {archivedCount > 0 && (
+          <label className="flex items-center gap-1.5 whitespace-nowrap text-xs text-slate-400">
+            <input
+              type="checkbox"
+              checked={showArchived}
+              onChange={(e) => setShowArchived(e.target.checked)}
+            />
+            Show archived ({archivedCount})
+          </label>
+        )}
       </div>
 
       <p className="text-xs text-slate-500">
@@ -87,7 +101,9 @@ export default function CreatorsListView({ creators = [] }) {
               <Link
                 key={c.id}
                 href={`/creators/${c.id}`}
-                className="flex items-center gap-3 rounded-md border border-slate-800 bg-slate-900 px-3 py-2.5 transition-colors hover:border-slate-700"
+                className={`flex items-center gap-3 rounded-md border border-slate-800 bg-slate-900 px-3 py-2.5 transition-colors hover:border-slate-700 ${
+                  c.is_archived ? "opacity-50" : ""
+                }`}
               >
                 <span
                   className={`shrink-0 rounded px-2 py-0.5 text-[10px] uppercase tracking-wide text-white ${onboarding.color}`}
@@ -99,6 +115,11 @@ export default function CreatorsListView({ creators = [] }) {
                 >
                   {vetting.label}
                 </span>
+                {c.is_archived && (
+                  <span className="shrink-0 rounded border border-slate-700 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-500">
+                    Archived
+                  </span>
+                )}
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-white">{c.name}</p>
                   <p className="truncate text-xs text-slate-500">

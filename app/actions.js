@@ -46,6 +46,20 @@ function cleanOwnerId(value) {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
+function cleanPriority(value) {
+  return ["low", "medium", "high"].includes(value) ? value : null;
+}
+
+function cleanLinkMap(rows) {
+  const map = {};
+  for (const row of Array.isArray(rows) ? rows : []) {
+    const key = clean(row?.platform, 50);
+    const url = clean(row?.url, 300);
+    if (key) map[key] = url;
+  }
+  return map;
+}
+
 /**
  * Every action re-checks the session cookie server-side. Middleware already
  * keeps signed-out visitors off these routes; this is just cheap insurance.
@@ -185,6 +199,9 @@ export async function updateBrand(brandId, input) {
       last_contact_date: cleanDate(input?.lastContactDate),
       next_follow_up_date: cleanDate(input?.nextFollowUpDate),
       estimated_deal_value: cleanNumber(input?.estimatedDealValue),
+      preferred_contact_method: clean(input?.preferredContactMethod) || null,
+      follow_up_priority: cleanPriority(input?.followUpPriority),
+      social_links: cleanLinkMap(input?.socialLinks),
     })
     .eq("id", brandId);
 
@@ -207,13 +224,6 @@ export async function updateCreator(creatorId, input) {
   if (!name) return fail("Enter a name.");
   if (!contact) return fail("Enter contact info.");
 
-  const platformLinks = {};
-  for (const row of Array.isArray(input?.platformLinks) ? input.platformLinks : []) {
-    const platform = clean(row?.platform, 50);
-    const url = clean(row?.url, 300);
-    if (platform) platformLinks[platform] = url;
-  }
-
   const { error } = await ctx.supabase
     .from("creators")
     .update({
@@ -225,7 +235,7 @@ export async function updateCreator(creatorId, input) {
       location: clean(input?.location) || null,
       age_confirmed: cleanBoolean(input?.ageConfirmed),
       primary_platform: clean(input?.primaryPlatform) || null,
-      platform_links: platformLinks,
+      platform_links: cleanLinkMap(input?.platformLinks),
       secondary_niches: clean(input?.secondaryNiches, MAX_LONG) || null,
       avg_views: clean(input?.avgViews) || null,
       engagement_rate: clean(input?.engagementRate) || null,
@@ -243,7 +253,48 @@ export async function updateCreator(creatorId, input) {
       last_contact_date: cleanDate(input?.lastContactDate),
       next_follow_up_date: cleanDate(input?.nextFollowUpDate),
       total_earnings: cleanNumber(input?.totalEarnings),
+      preferred_contact_method: clean(input?.preferredContactMethod) || null,
+      follow_up_priority: cleanPriority(input?.followUpPriority),
+      notes: clean(input?.notes, MAX_LONG) || null,
     })
+    .eq("id", creatorId);
+
+  if (error) return fail(error.message);
+
+  revalidatePath("/creators");
+  revalidatePath(`/creators/${creatorId}`);
+  revalidatePath("/pipeline");
+  revalidatePath("/contacts");
+  return { ok: true };
+}
+
+/** Archiving hides a brand from active views (Pipeline, Contacts) without deleting it. */
+export async function setBrandArchived(brandId, isArchived) {
+  const ctx = await requireSession();
+  if (ctx.error) return fail(ctx.error);
+
+  const { error } = await ctx.supabase
+    .from("brands")
+    .update({ is_archived: Boolean(isArchived) })
+    .eq("id", brandId);
+
+  if (error) return fail(error.message);
+
+  revalidatePath("/brands");
+  revalidatePath(`/brands/${brandId}`);
+  revalidatePath("/pipeline");
+  revalidatePath("/contacts");
+  return { ok: true };
+}
+
+/** Archiving hides a creator from active views (Pipeline, Contacts) without deleting it. */
+export async function setCreatorArchived(creatorId, isArchived) {
+  const ctx = await requireSession();
+  if (ctx.error) return fail(ctx.error);
+
+  const { error } = await ctx.supabase
+    .from("creators")
+    .update({ is_archived: Boolean(isArchived) })
     .eq("id", creatorId);
 
   if (error) return fail(error.message);

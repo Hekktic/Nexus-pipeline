@@ -76,8 +76,18 @@ alter table public.brands add column if not exists last_contact_date     date;
 alter table public.brands add column if not exists next_follow_up_date   date;
 alter table public.brands add column if not exists estimated_deal_value  numeric;
 
+-- Contacts upgrade (Phase 2, part 2): preferred contact method, follow-up
+-- priority, a social-links map (mirrors creators.platform_links), and
+-- archiving — hiding a brand from active views without deleting it.
+alter table public.brands add column if not exists preferred_contact_method text;
+alter table public.brands add column if not exists follow_up_priority       text
+                          check (follow_up_priority is null or follow_up_priority in ('low', 'medium', 'high'));
+alter table public.brands add column if not exists social_links             jsonb not null default '{}'::jsonb;
+alter table public.brands add column if not exists is_archived              boolean not null default false;
+
 create index if not exists brands_owner_id_idx            on public.brands (owner_id);
 create index if not exists brands_next_follow_up_date_idx on public.brands (next_follow_up_date);
+create index if not exists brands_is_archived_idx         on public.brands (is_archived);
 
 -- -----------------------------------------------------------------------------
 -- creators
@@ -134,8 +144,18 @@ alter table public.creators add column if not exists last_contact_date          
 alter table public.creators add column if not exists next_follow_up_date           date;
 alter table public.creators add column if not exists total_earnings                numeric;
 
+-- Contacts upgrade (Phase 2, part 2): preferred contact method, follow-up
+-- priority, a general notes field (brands already have one), and
+-- archiving — hiding a creator from active views without deleting it.
+alter table public.creators add column if not exists preferred_contact_method text;
+alter table public.creators add column if not exists follow_up_priority       text
+                            check (follow_up_priority is null or follow_up_priority in ('low', 'medium', 'high'));
+alter table public.creators add column if not exists notes                    text;
+alter table public.creators add column if not exists is_archived              boolean not null default false;
+
 create index if not exists creators_owner_id_idx            on public.creators (owner_id);
 create index if not exists creators_next_follow_up_date_idx on public.creators (next_follow_up_date);
+create index if not exists creators_is_archived_idx         on public.creators (is_archived);
 
 -- -----------------------------------------------------------------------------
 -- call_logs: append-only notes anyone can add to a brand or creator over

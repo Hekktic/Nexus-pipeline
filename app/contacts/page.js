@@ -22,8 +22,8 @@ export default async function ContactsPage() {
     { data: creators, error: creatorsError },
     { data: callLogs, error: callLogsError },
   ] = await Promise.all([
-    supabase.from("brands").select("*").order("updated_at", { ascending: false }),
-    supabase.from("creators").select("*").order("updated_at", { ascending: false }),
+    supabase.from("brands").select("*").eq("is_archived", false).order("updated_at", { ascending: false }),
+    supabase.from("creators").select("*").eq("is_archived", false).order("updated_at", { ascending: false }),
     supabase.from("call_logs").select("*").order("created_at", { ascending: false }),
   ]);
 

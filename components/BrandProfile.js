@@ -2,13 +2,14 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { ArrowLeft, Clock } from "lucide-react";
-import { addCallLog, updateBrand, updateBrandStatus } from "@/app/actions";
+import { ArrowLeft, Archive, ArchiveRestore, Clock, Plus, X } from "lucide-react";
+import { addCallLog, setBrandArchived, updateBrand, updateBrandStatus } from "@/app/actions";
 import Field from "@/components/Field";
 import TimeAgo from "@/components/TimeAgo";
 import { BRAND_STATUS_OPTIONS } from "@/lib/constants";
 
 function toFormState(brand) {
+  const socialLinks = Object.entries(brand.social_links || {});
   return {
     name: brand.name || "",
     contact: brand.contact || "",
@@ -34,6 +35,9 @@ function toFormState(brand) {
     lastContactDate: brand.last_contact_date || "",
     nextFollowUpDate: brand.next_follow_up_date || "",
     estimatedDealValue: brand.estimated_deal_value ?? "",
+    preferredContactMethod: brand.preferred_contact_method || "",
+    followUpPriority: brand.follow_up_priority || "",
+    socialLinks: socialLinks.length ? socialLinks.map(([platform, url]) => ({ platform, url })) : [{ platform: "", url: "" }],
   };
 }
 
@@ -45,6 +49,25 @@ export default function BrandProfile({ brand, teamMembers = [], callLogs = [] })
   const [pending, startTransition] = useTransition();
 
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
+
+  const setSocialRow = (i, key) => (e) =>
+    setForm((f) => ({
+      ...f,
+      socialLinks: f.socialLinks.map((row, idx) => (idx === i ? { ...row, [key]: e.target.value } : row)),
+    }));
+
+  const addSocialRow = () =>
+    setForm((f) => ({ ...f, socialLinks: [...f.socialLinks, { platform: "", url: "" }] }));
+
+  const removeSocialRow = (i) =>
+    setForm((f) => ({ ...f, socialLinks: f.socialLinks.filter((_, idx) => idx !== i) }));
+
+  const toggleArchived = () => {
+    startTransition(async () => {
+      const result = await setBrandArchived(brand.id, !brand.is_archived);
+      if (!result?.ok) setError(result?.error || "That didn't save. Try again.");
+    });
+  };
 
   const save = () => {
     setError("");
@@ -84,23 +107,41 @@ export default function BrandProfile({ brand, teamMembers = [], callLogs = [] })
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-lg font-semibold text-white">{brand.name}</h1>
+          <h1 className="flex items-center gap-2 text-lg font-semibold text-white">
+            {brand.name}
+            {brand.is_archived && (
+              <span className="rounded border border-slate-700 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-500">
+                Archived
+              </span>
+            )}
+          </h1>
           <p className="text-xs text-slate-500">
             Logged by {brand.logged_by || "—"} · Updated <TimeAgo ts={brand.updated_at} />
           </p>
         </div>
-        <select
-          className="input-sm"
-          value={brand.status}
-          disabled={pending}
-          onChange={(e) => changeStatus(e.target.value)}
-        >
-          {BRAND_STATUS_OPTIONS.map((s) => (
-            <option key={s.value} value={s.value}>
-              {s.label}
-            </option>
-          ))}
-        </select>
+        <div className="flex items-center gap-2">
+          <select
+            className="input-sm"
+            value={brand.status}
+            disabled={pending}
+            onChange={(e) => changeStatus(e.target.value)}
+          >
+            {BRAND_STATUS_OPTIONS.map((s) => (
+              <option key={s.value} value={s.value}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={toggleArchived}
+            disabled={pending}
+            title={brand.is_archived ? "Restore to active views" : "Hide from active views"}
+            className="flex items-center gap-1.5 rounded-md border border-slate-700 px-2.5 py-1.5 text-xs text-slate-400 transition-colors hover:bg-slate-900 hover:text-slate-200 disabled:opacity-50"
+          >
+            {brand.is_archived ? <ArchiveRestore size={14} /> : <Archive size={14} />}
+            {brand.is_archived ? "Restore" : "Archive"}
+          </button>
+        </div>
       </div>
 
       <Section title="Contact">
@@ -112,7 +153,34 @@ export default function BrandProfile({ brand, teamMembers = [], callLogs = [] })
           <Field label="Email"><input className="input" value={form.email} onChange={set("email")} /></Field>
           <Field label="Phone"><input className="input" value={form.phone} onChange={set("phone")} /></Field>
           <Field label="Website / Shopify URL"><input className="input" value={form.website} onChange={set("website")} /></Field>
+          <Field label="Preferred contact method"><input className="input" value={form.preferredContactMethod} onChange={set("preferredContactMethod")} placeholder="e.g. email, phone, Slack" /></Field>
         </Grid>
+
+        <Field label="Social links">
+          <div className="space-y-2">
+            {form.socialLinks.map((row, i) => (
+              <div key={i} className="flex gap-2">
+                <input className="input" value={row.platform} onChange={setSocialRow(i, "platform")} placeholder="e.g. Instagram" />
+                <input className="input" value={row.url} onChange={setSocialRow(i, "url")} placeholder="Profile URL" />
+                <button
+                  type="button"
+                  onClick={() => removeSocialRow(i)}
+                  disabled={form.socialLinks.length === 1}
+                  className="shrink-0 rounded-md p-2 text-slate-500 transition-colors hover:bg-slate-800 hover:text-slate-200 disabled:opacity-30"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={addSocialRow}
+              className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-200"
+            >
+              <Plus size={12} /> Add social link
+            </button>
+          </div>
+        </Field>
       </Section>
 
       <Section title="Company">
@@ -148,6 +216,14 @@ export default function BrandProfile({ brand, teamMembers = [], callLogs = [] })
           </Field>
           <Field label="Last contact"><input className="input" type="date" value={form.lastContactDate} onChange={set("lastContactDate")} /></Field>
           <Field label="Next follow-up"><input className="input" type="date" value={form.nextFollowUpDate} onChange={set("nextFollowUpDate")} /></Field>
+          <Field label="Follow-up priority">
+            <select className="input" value={form.followUpPriority} onChange={set("followUpPriority")}>
+              <option value="">None</option>
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+          </Field>
         </Grid>
       </Section>
 
