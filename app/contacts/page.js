@@ -9,10 +9,9 @@ import { groupTagsBySubject } from "@/lib/tags";
 export const dynamic = "force-dynamic";
 
 /**
- * Same brands+creators+call_logs fetch as /pipeline — this is the general
- * "everything, searchable" view. /pipeline becomes the dedicated deals
- * board in a later phase; until then the two pages intentionally show the
- * same data.
+ * The general "every brand and creator, searchable" view. /pipeline is the
+ * separate sales-deals board — a brand/creator's relationship status lives
+ * here; a specific sales opportunity with them is a deal, tracked there.
  */
 export default async function ContactsPage() {
   if (!hasSupabaseEnv) return <CenteredScreen><SetupNotice /></CenteredScreen>;

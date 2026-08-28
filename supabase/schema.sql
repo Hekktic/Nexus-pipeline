@@ -203,7 +203,7 @@ alter table public.call_logs alter column subject_id set not null;
 
 alter table public.call_logs drop constraint if exists call_logs_subject_type_check;
 alter table public.call_logs add constraint call_logs_subject_type_check
-  check (subject_type in ('brand', 'creator'));
+  check (subject_type in ('brand', 'creator', 'deal'));
 
 create index if not exists call_logs_subject_idx on public.call_logs (subject_type, subject_id, created_at desc);
 
@@ -225,10 +225,17 @@ create unique index if not exists tags_name_lower_idx on public.tags (lower(name
 create table if not exists public.contact_tags (
   id           uuid primary key default gen_random_uuid(),
   tag_id       uuid not null references public.tags (id) on delete cascade,
-  subject_type text not null check (subject_type in ('brand', 'creator')),
+  subject_type text not null check (subject_type in ('brand', 'creator', 'deal')),
   subject_id   uuid not null,
   created_at   timestamptz not null default now()
 );
+
+-- Widens the inline check above for a database that already has this table
+-- from before 'deal' was a valid subject_type (the create above is skipped
+-- on an existing table, so the old, narrower constraint would otherwise stick).
+alter table public.contact_tags drop constraint if exists contact_tags_subject_type_check;
+alter table public.contact_tags add constraint contact_tags_subject_type_check
+  check (subject_type in ('brand', 'creator', 'deal'));
 
 create unique index if not exists contact_tags_unique_idx
   on public.contact_tags (tag_id, subject_type, subject_id);
@@ -243,15 +250,52 @@ create index if not exists contact_tags_subject_idx
 -- -----------------------------------------------------------------------------
 create table if not exists public.activities (
   id           uuid primary key default gen_random_uuid(),
-  subject_type text not null check (subject_type in ('brand', 'creator')),
+  subject_type text not null check (subject_type in ('brand', 'creator', 'deal')),
   subject_id   uuid not null,
   type         text not null,
   description  text not null,
   created_at   timestamptz not null default now()
 );
 
+alter table public.activities drop constraint if exists activities_subject_type_check;
+alter table public.activities add constraint activities_subject_type_check
+  check (subject_type in ('brand', 'creator', 'deal'));
+
 create index if not exists activities_subject_idx
   on public.activities (subject_type, subject_id, created_at desc);
+
+-- -----------------------------------------------------------------------------
+-- deals: the sales pipeline. A brand or creator's relationship status
+-- (brands.status, creators.vetting_status/onboarding_status) tracks how the
+-- relationship itself is going; a deal is a specific sales opportunity with
+-- that brand or creator, and there can be more than one over time (e.g. a
+-- renewed campaign is a new deal, not a status flip on the same one). Notes,
+-- tags, and history reuse call_logs/contact_tags/activities via the same
+-- polymorphic subject_type/subject_id pattern used for brands and creators.
+-- -----------------------------------------------------------------------------
+create table if not exists public.deals (
+  id                  uuid primary key default gen_random_uuid(),
+  subject_type        text not null check (subject_type in ('brand', 'creator')),
+  subject_id          uuid not null,
+  stage               text not null default 'new'
+                      check (stage in ('new', 'contacted', 'negotiating', 'pilot',
+                                       'active', 'won', 'lost', 'paused')),
+  deal_value          numeric,
+  probability         smallint check (probability between 0 and 100),
+  expected_close_date date,
+  owner_id            uuid references public.team_members (id) on delete set null,
+  next_action         text,
+  next_follow_up_date date,
+  lost_reason         text,
+  created_at          timestamptz not null default now(),
+  updated_at          timestamptz not null default now()
+);
+
+create index if not exists deals_subject_idx          on public.deals (subject_type, subject_id);
+create index if not exists deals_stage_idx             on public.deals (stage);
+create index if not exists deals_owner_id_idx          on public.deals (owner_id);
+create index if not exists deals_next_follow_up_idx    on public.deals (next_follow_up_date);
+create index if not exists deals_updated_at_idx        on public.deals (updated_at desc);
 
 -- -----------------------------------------------------------------------------
 -- profit_scenarios: saved runs of the Profit Calculator (Quick or Advanced
@@ -312,6 +356,11 @@ create trigger profit_scenarios_touch_updated_at
   before update on public.profit_scenarios
   for each row execute function public.touch_updated_at();
 
+drop trigger if exists deals_touch_updated_at on public.deals;
+create trigger deals_touch_updated_at
+  before update on public.deals
+  for each row execute function public.touch_updated_at();
+
 -- A new call note counts as activity on whichever brand or creator it's on.
 create or replace function public.touch_subject_on_call_log()
 returns trigger
@@ -322,8 +371,10 @@ as $$
 begin
   if new.subject_type = 'brand' then
     update public.brands set updated_at = now() where id = new.subject_id;
-  else
+  elsif new.subject_type = 'creator' then
     update public.creators set updated_at = now() where id = new.subject_id;
+  elsif new.subject_type = 'deal' then
+    update public.deals set updated_at = now() where id = new.subject_id;
   end if;
   return new;
 end;
@@ -347,6 +398,7 @@ alter table public.tags         enable row level security;
 alter table public.contact_tags enable row level security;
 alter table public.activities      enable row level security;
 alter table public.profit_scenarios enable row level security;
+alter table public.deals            enable row level security;
 
 drop policy if exists "brands full access" on public.brands;
 create policy "brands full access"
@@ -400,6 +452,13 @@ create policy "activities full access"
 drop policy if exists "profit scenarios full access" on public.profit_scenarios;
 create policy "profit scenarios full access"
   on public.profit_scenarios for all
+  to anon
+  using (true)
+  with check (true);
+
+drop policy if exists "deals full access" on public.deals;
+create policy "deals full access"
+  on public.deals for all
   to anon
   using (true)
   with check (true);
