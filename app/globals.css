@@ -15,7 +15,7 @@
     @apply w-full rounded-md border border-slate-700 bg-slate-950 px-2.5 py-2 text-sm text-white;
   }
   .input:focus {
-    @apply border-amber-500 outline-none;
+    @apply border-white outline-none;
   }
   .input::placeholder {
     @apply text-slate-500;
@@ -28,7 +28,7 @@
     @apply rounded-md border border-slate-700 bg-slate-950 px-2 py-1.5 text-[13px] text-white;
   }
   .input-sm:focus {
-    @apply border-amber-500 outline-none;
+    @apply border-white outline-none;
   }
   .input-sm::placeholder {
     @apply text-slate-500;

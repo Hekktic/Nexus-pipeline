@@ -75,7 +75,7 @@ export default function DealsListView({ deals = [], brands = [], creators = [], 
 
         <button
           onClick={() => setShowCreate((v) => !v)}
-          className="flex items-center gap-1.5 rounded-md bg-amber-500 px-3 text-sm font-medium text-slate-950 transition-colors hover:bg-amber-400"
+          className="flex items-center gap-1.5 rounded-md bg-white px-3 text-sm font-medium text-slate-950 transition-colors hover:bg-slate-200"
         >
           <Plus size={14} /> New deal
         </button>
@@ -204,7 +204,7 @@ function NewDealForm({ brands, creators, onCreated, onCancel }) {
         <button
           onClick={submit}
           disabled={pending}
-          className="rounded-md bg-amber-500 px-4 py-2 text-sm font-medium text-slate-950 transition-colors hover:bg-amber-400 disabled:opacity-50"
+          className="rounded-md bg-white px-4 py-2 text-sm font-medium text-slate-950 transition-colors hover:bg-slate-200 disabled:opacity-50"
         >
           {pending ? "Creating..." : "Create deal"}
         </button>

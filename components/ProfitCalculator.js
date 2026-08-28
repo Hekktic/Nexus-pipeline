@@ -131,9 +131,9 @@ export default function ProfitCalculator({ brands = [], creators = [], scenarios
             <ModeToggle value="advanced" current={mode} onClick={() => startNewScenario("advanced")} label="Advanced" />
           </div>
           {editingScenarioId && (
-            <span className="flex items-center gap-2 text-xs text-amber-400">
+            <span className="flex items-center gap-2 text-xs text-slate-300">
               Editing &quot;{scenarioName}&quot;
-              <button onClick={cancelEdit} className="underline hover:text-amber-300">
+              <button onClick={cancelEdit} className="underline hover:text-white">
                 Cancel
               </button>
             </span>
@@ -187,7 +187,7 @@ export default function ProfitCalculator({ brands = [], creators = [], scenarios
           <button
             onClick={saveScenario}
             disabled={pending}
-            className="rounded-md bg-amber-500 px-4 py-2 text-sm font-medium text-slate-950 transition-colors hover:bg-amber-400 disabled:opacity-50"
+            className="rounded-md bg-white px-4 py-2 text-sm font-medium text-slate-950 transition-colors hover:bg-slate-200 disabled:opacity-50"
           >
             {pending ? "Saving..." : editingScenarioId ? "Update scenario" : "Save scenario"}
           </button>
