@@ -6,9 +6,11 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import {
   BRAND_STATUS_VALUES,
+  DEAL_STAGE_VALUES,
   ONBOARDING_STATUS_VALUES,
   VETTING_STATUS_VALUES,
   brandStatusMeta,
+  dealStageMeta,
   onboardingStatusMeta,
   vettingStatusMeta,
 } from "@/lib/constants";
@@ -20,6 +22,7 @@ import { findMatchingRows } from "@/lib/duplicates";
 
 const MAX_SHORT = 200;
 const MAX_LONG = 2000;
+const SUBJECT_TYPES = ["brand", "creator", "deal"];
 
 function fail(error) {
   return { ok: false, error };
@@ -42,6 +45,11 @@ function cleanDate(value) {
 function cleanRating(value) {
   const n = cleanNumber(value);
   return n === null ? null : Math.min(5, Math.max(1, Math.round(n)));
+}
+
+function cleanProbability(value) {
+  const n = cleanNumber(value);
+  return n === null ? null : Math.min(100, Math.max(0, Math.round(n)));
 }
 
 function cleanBoolean(value) {
@@ -528,7 +536,7 @@ export async function addCallLog(subjectType, subjectId, text) {
   const ctx = await requireSession();
   if (ctx.error) return fail(ctx.error);
 
-  if (subjectType !== "brand" && subjectType !== "creator") {
+  if (!SUBJECT_TYPES.includes(subjectType)) {
     return fail("Unknown subject.");
   }
 
@@ -552,7 +560,7 @@ export async function addTag(subjectType, subjectId, tagName) {
   const ctx = await requireSession();
   if (ctx.error) return fail(ctx.error);
 
-  if (subjectType !== "brand" && subjectType !== "creator") return fail("Unknown subject.");
+  if (!SUBJECT_TYPES.includes(subjectType)) return fail("Unknown subject.");
 
   const name = clean(tagName, 50);
   if (!name) return fail("Enter a tag name.");
@@ -733,5 +741,104 @@ export async function setProfitScenarioArchived(scenarioId, isArchived) {
   if (error) return fail(error.message);
 
   revalidatePath("/calculator");
+  return { ok: true };
+}
+
+/** A new sales opportunity for a brand or creator. A relationship can have more than one deal over time. */
+export async function createDeal(input) {
+  const ctx = await requireSession();
+  if (ctx.error) return fail(ctx.error);
+
+  const subjectType = input?.subjectType;
+  const subjectId = input?.subjectId;
+  if (subjectType !== "brand" && subjectType !== "creator") return fail("Choose a brand or creator.");
+  if (!subjectId) return fail("Choose a brand or creator.");
+
+  const { data: created, error } = await ctx.supabase
+    .from("deals")
+    .insert({
+      subject_type: subjectType,
+      subject_id: subjectId,
+      deal_value: cleanNumber(input?.dealValue),
+      probability: cleanProbability(input?.probability),
+      expected_close_date: cleanDate(input?.expectedCloseDate),
+      owner_id: cleanOwnerId(input?.ownerId),
+      next_action: clean(input?.nextAction, MAX_LONG) || null,
+      next_follow_up_date: cleanDate(input?.nextFollowUpDate),
+    })
+    .select("id")
+    .single();
+
+  if (error) return fail(error.message);
+
+  await logActivity(ctx.supabase, "deal", created.id, "created", "Deal created");
+
+  revalidatePath("/pipeline");
+  revalidatePath(`/${subjectType}s/${subjectId}`);
+  return { ok: true, id: created.id };
+}
+
+/** Full edit from the deal detail page — everything except stage, which goes through updateDealStage so stage changes always get logged. */
+export async function updateDeal(dealId, input) {
+  const ctx = await requireSession();
+  if (ctx.error) return fail(ctx.error);
+
+  const { error } = await ctx.supabase
+    .from("deals")
+    .update({
+      deal_value: cleanNumber(input?.dealValue),
+      probability: cleanProbability(input?.probability),
+      expected_close_date: cleanDate(input?.expectedCloseDate),
+      owner_id: cleanOwnerId(input?.ownerId),
+      next_action: clean(input?.nextAction, MAX_LONG) || null,
+      next_follow_up_date: cleanDate(input?.nextFollowUpDate),
+    })
+    .eq("id", dealId);
+
+  if (error) return fail(error.message);
+
+  await logActivity(ctx.supabase, "deal", dealId, "profile_updated", "Deal details updated");
+
+  revalidatePath("/pipeline");
+  revalidatePath(`/deals/${dealId}`);
+  return { ok: true };
+}
+
+/** Stage changes are their own action so every one gets logged, and a "lost" reason is captured (and cleared going forward) consistently. */
+export async function updateDealStage(dealId, stage, lostReason) {
+  const ctx = await requireSession();
+  if (ctx.error) return fail(ctx.error);
+
+  if (!DEAL_STAGE_VALUES.includes(stage)) return fail("Unknown stage.");
+
+  const { data: current, error: findError } = await ctx.supabase
+    .from("deals")
+    .select("stage")
+    .eq("id", dealId)
+    .maybeSingle();
+  if (findError) return fail(findError.message);
+
+  const { error } = await ctx.supabase
+    .from("deals")
+    .update({
+      stage,
+      lost_reason: stage === "lost" ? clean(lostReason, MAX_LONG) || null : null,
+    })
+    .eq("id", dealId);
+
+  if (error) return fail(error.message);
+
+  if (current && current.stage !== stage) {
+    await logActivity(
+      ctx.supabase,
+      "deal",
+      dealId,
+      "stage_changed",
+      `Stage changed from ${dealStageMeta(current.stage).label} to ${dealStageMeta(stage).label}`
+    );
+  }
+
+  revalidatePath("/pipeline");
+  revalidatePath(`/deals/${dealId}`);
   return { ok: true };
 }

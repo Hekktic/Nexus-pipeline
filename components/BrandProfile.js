@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, Archive, ArchiveRestore, Plus, X } from "lucide-react";
 import { setBrandArchived, updateBrand, updateBrandStatus } from "@/app/actions";
 import Field from "@/components/Field";
+import RelatedDealsSection from "@/components/RelatedDealsSection";
 import TagsEditor from "@/components/TagsEditor";
 import TimeAgo from "@/components/TimeAgo";
 import Timeline from "@/components/Timeline";
@@ -43,7 +44,7 @@ function toFormState(brand) {
   };
 }
 
-export default function BrandProfile({ brand, teamMembers = [], timeline = [], tags = [], allTagNames = [] }) {
+export default function BrandProfile({ brand, teamMembers = [], timeline = [], tags = [], allTagNames = [], deals = [] }) {
   const [form, setForm] = useState(() => toFormState(brand));
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
@@ -136,6 +137,8 @@ export default function BrandProfile({ brand, teamMembers = [], timeline = [], t
       </div>
 
       <TagsEditor subjectType="brand" subjectId={brand.id} tags={tags} allTagNames={allTagNames} />
+
+      <RelatedDealsSection deals={deals} />
 
       <Section title="Contact">
         <Grid>

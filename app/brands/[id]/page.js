@@ -16,13 +16,19 @@ export default async function BrandDetailPage({ params }) {
   const { id } = await params;
   const supabase = createClient();
 
-  const [{ data: brand, error: brandError }, { data: teamMembers }, { data: allTags }, { tags }, { timeline }] =
+  const [{ data: brand, error: brandError }, { data: teamMembers }, { data: allTags }, { tags }, { timeline }, { data: deals }] =
     await Promise.all([
       supabase.from("brands").select("*").eq("id", id).maybeSingle(),
       supabase.from("team_members").select("id, display_name").eq("is_active", true).order("display_name"),
       supabase.from("tags").select("name").order("name"),
       fetchTagsFor(supabase, "brand", id),
       fetchTimelineFor(supabase, "brand", id),
+      supabase
+        .from("deals")
+        .select("id, stage, deal_value")
+        .eq("subject_type", "brand")
+        .eq("subject_id", id)
+        .order("updated_at", { ascending: false }),
     ]);
 
   if (brandError) {
@@ -43,6 +49,7 @@ export default async function BrandDetailPage({ params }) {
         timeline={timeline}
         tags={tags}
         allTagNames={(allTags ?? []).map((t) => t.name)}
+        deals={deals ?? []}
       />
     </AppShell>
   );

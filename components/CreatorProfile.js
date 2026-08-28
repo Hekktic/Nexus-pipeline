@@ -10,6 +10,7 @@ import {
   updateCreatorVettingStatus,
 } from "@/app/actions";
 import Field from "@/components/Field";
+import RelatedDealsSection from "@/components/RelatedDealsSection";
 import TagsEditor from "@/components/TagsEditor";
 import TimeAgo from "@/components/TimeAgo";
 import Timeline from "@/components/Timeline";
@@ -52,7 +53,7 @@ function toFormState(creator) {
   };
 }
 
-export default function CreatorProfile({ creator, teamMembers = [], timeline = [], tags = [], allTagNames = [] }) {
+export default function CreatorProfile({ creator, teamMembers = [], timeline = [], tags = [], allTagNames = [], deals = [] }) {
   const [form, setForm] = useState(() => toFormState(creator));
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
@@ -163,6 +164,8 @@ export default function CreatorProfile({ creator, teamMembers = [], timeline = [
       </div>
 
       <TagsEditor subjectType="creator" subjectId={creator.id} tags={tags} allTagNames={allTagNames} />
+
+      <RelatedDealsSection deals={deals} />
 
       <Section title="Contact">
         <Grid>
