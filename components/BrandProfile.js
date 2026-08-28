@@ -93,7 +93,7 @@ export default function BrandProfile({ brand, teamMembers = [], timeline = [], t
 
   return (
     <div className="space-y-6">
-      <Link href="/brands" className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-slate-200">
+      <Link href="/brands" className="flex items-center gap-1.5 text-sm text-neutral-400 hover:text-neutral-200">
         <ArrowLeft size={14} /> Back to brands
       </Link>
 
@@ -102,12 +102,12 @@ export default function BrandProfile({ brand, teamMembers = [], timeline = [], t
           <h1 className="flex items-center gap-2 text-lg font-semibold text-white">
             {brand.name}
             {brand.is_archived && (
-              <span className="rounded border border-slate-700 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-500">
+              <span className="rounded border border-neutral-700 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-neutral-500">
                 Archived
               </span>
             )}
           </h1>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-neutral-500">
             Logged by {brand.logged_by || "—"} · Updated <TimeAgo ts={brand.updated_at} />
           </p>
         </div>
@@ -128,7 +128,7 @@ export default function BrandProfile({ brand, teamMembers = [], timeline = [], t
             onClick={toggleArchived}
             disabled={pending}
             title={brand.is_archived ? "Restore to active views" : "Hide from active views"}
-            className="flex items-center gap-1.5 rounded-md border border-slate-700 px-2.5 py-1.5 text-xs text-slate-400 transition-colors hover:bg-slate-900 hover:text-slate-200 disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-md border border-neutral-700 px-2.5 py-1.5 text-xs text-neutral-400 transition-colors hover:bg-neutral-900 hover:text-neutral-200 disabled:opacity-50"
           >
             {brand.is_archived ? <ArchiveRestore size={14} /> : <Archive size={14} />}
             {brand.is_archived ? "Restore" : "Archive"}
@@ -162,7 +162,7 @@ export default function BrandProfile({ brand, teamMembers = [], timeline = [], t
                   type="button"
                   onClick={() => removeSocialRow(i)}
                   disabled={form.socialLinks.length === 1}
-                  className="shrink-0 rounded-md p-2 text-slate-500 transition-colors hover:bg-slate-800 hover:text-slate-200 disabled:opacity-30"
+                  className="shrink-0 rounded-md p-2 text-neutral-500 transition-colors hover:bg-neutral-800 hover:text-neutral-200 disabled:opacity-30"
                 >
                   <X size={14} />
                 </button>
@@ -171,7 +171,7 @@ export default function BrandProfile({ brand, teamMembers = [], timeline = [], t
             <button
               type="button"
               onClick={addSocialRow}
-              className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-200"
+              className="flex items-center gap-1 text-xs text-neutral-400 hover:text-neutral-200"
             >
               <Plus size={12} /> Add social link
             </button>
@@ -237,7 +237,7 @@ export default function BrandProfile({ brand, teamMembers = [], timeline = [], t
         <button
           onClick={save}
           disabled={pending || !form.name.trim() || !form.contact.trim()}
-          className="rounded-md bg-white px-4 py-2 text-sm font-medium text-slate-950 transition-colors hover:bg-slate-200 disabled:opacity-50"
+          className="btn-accent rounded-md px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50"
         >
           {pending ? "Saving..." : "Save profile"}
         </button>
@@ -253,7 +253,7 @@ export default function BrandProfile({ brand, teamMembers = [], timeline = [], t
 
 function Section({ title, children }) {
   return (
-    <div className="rounded-lg border border-slate-800 bg-slate-950 p-4">
+    <div className="rounded-lg border border-neutral-800 bg-neutral-950 p-4">
       <h2 className="mb-3 text-sm font-semibold text-white">{title}</h2>
       {children}
     </div>

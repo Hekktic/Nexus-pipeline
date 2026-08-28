@@ -14,7 +14,7 @@ const HEADLINE_COLOR = {
 export default function DealHealthCard({ health }) {
   if (!health || !health.headline) return null;
 
-  const colorClass = HEADLINE_COLOR[health.headline] || "text-slate-300 border-slate-800 bg-slate-900";
+  const colorClass = HEADLINE_COLOR[health.headline] || "text-neutral-300 border-neutral-800 bg-neutral-900";
 
   return (
     <div className={`rounded-lg border p-4 ${colorClass}`}>
@@ -22,7 +22,7 @@ export default function DealHealthCard({ health }) {
       <p className="mb-3 text-base font-semibold">{health.headline}</p>
       <div className="space-y-1.5">
         {health.checks.map((c) => (
-          <div key={c.id} className="flex items-start gap-2 text-xs text-slate-300">
+          <div key={c.id} className="flex items-start gap-2 text-xs text-neutral-300">
             {c.pass ? (
               <Check size={13} className="mt-0.5 shrink-0 text-emerald-500" />
             ) : (
@@ -30,12 +30,12 @@ export default function DealHealthCard({ health }) {
             )}
             <div>
               <span>{c.label}</span>
-              <span className="ml-1.5 text-slate-500">— {c.detail}</span>
+              <span className="ml-1.5 text-neutral-500">— {c.detail}</span>
             </div>
           </div>
         ))}
       </div>
-      <p className="mt-3 text-[11px] italic text-slate-500">
+      <p className="mt-3 text-[11px] italic text-neutral-500">
         These figures are estimates based on the assumptions entered, not a guarantee of results.
       </p>
     </div>

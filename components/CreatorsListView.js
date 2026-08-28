@@ -55,7 +55,7 @@ export default function CreatorsListView({ creators = [] }) {
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2">
         <div className="relative min-w-[160px] flex-1">
-          <Search size={14} className="absolute left-2.5 top-2.5 text-slate-500" />
+          <Search size={14} className="absolute left-2.5 top-2.5 text-neutral-500" />
           <input
             className="input pl-8"
             value={query}
@@ -88,7 +88,7 @@ export default function CreatorsListView({ creators = [] }) {
           ))}
         </select>
         {archivedCount > 0 && (
-          <label className="flex items-center gap-1.5 whitespace-nowrap text-xs text-slate-400">
+          <label className="flex items-center gap-1.5 whitespace-nowrap text-xs text-neutral-400">
             <input
               type="checkbox"
               checked={showArchived}
@@ -100,13 +100,13 @@ export default function CreatorsListView({ creators = [] }) {
       </div>
 
       <div className="flex items-center justify-between">
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-neutral-500">
           {filtered.length} of {creators.length} creators
         </p>
         {filtered.length > 0 && (
           <button
             onClick={exportCSV}
-            className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200"
+            className="flex items-center gap-1.5 text-xs text-neutral-400 hover:text-neutral-200"
           >
             <Download size={12} /> Export CSV
           </button>
@@ -114,7 +114,7 @@ export default function CreatorsListView({ creators = [] }) {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="py-10 text-center text-sm text-slate-500">
+        <div className="py-10 text-center text-sm text-neutral-500">
           {creators.length === 0
             ? "No creators logged yet. Add one from the Log screen."
             : "Nothing matches those filters."}
@@ -128,7 +128,7 @@ export default function CreatorsListView({ creators = [] }) {
               <Link
                 key={c.id}
                 href={`/creators/${c.id}`}
-                className={`flex items-center gap-3 rounded-md border border-slate-800 bg-slate-900 px-3 py-2.5 transition-colors hover:border-slate-700 ${
+                className={`flex items-center gap-3 rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2.5 transition-colors hover:border-neutral-700 ${
                   c.is_archived ? "opacity-50" : ""
                 }`}
               >
@@ -143,13 +143,13 @@ export default function CreatorsListView({ creators = [] }) {
                   {vetting.label}
                 </span>
                 {c.is_archived && (
-                  <span className="shrink-0 rounded border border-slate-700 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-500">
+                  <span className="shrink-0 rounded border border-neutral-700 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-neutral-500">
                     Archived
                   </span>
                 )}
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-white">{c.name}</p>
-                  <p className="truncate text-xs text-slate-500">
+                  <p className="truncate text-xs text-neutral-500">
                     {c.category || "no category"} · {c.contact}
                   </p>
                 </div>
@@ -158,7 +158,7 @@ export default function CreatorsListView({ creators = [] }) {
                     {c.tags.slice(0, 3).map((t) => (
                       <span
                         key={t.contactTagId}
-                        className="rounded-full border border-slate-700 px-2 py-0.5 text-[10px] text-slate-400"
+                        className="rounded-full border border-neutral-700 px-2 py-0.5 text-[10px] text-neutral-400"
                       >
                         {t.name}
                       </span>
@@ -166,11 +166,11 @@ export default function CreatorsListView({ creators = [] }) {
                   </div>
                 )}
                 {c.owner && (
-                  <span className="hidden shrink-0 text-xs text-slate-500 sm:inline">
+                  <span className="hidden shrink-0 text-xs text-neutral-500 sm:inline">
                     {c.owner.display_name}
                   </span>
                 )}
-                <TimeAgo ts={c.updated_at} className="hidden shrink-0 text-xs text-slate-600 sm:inline" />
+                <TimeAgo ts={c.updated_at} className="hidden shrink-0 text-xs text-neutral-600 sm:inline" />
               </Link>
             );
           })}

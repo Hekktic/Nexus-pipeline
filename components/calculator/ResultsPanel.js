@@ -20,7 +20,7 @@ export default function ResultsPanel({ mode, outputs, errors }) {
 
   if (!outputs) {
     return (
-      <div className="rounded-lg border border-slate-800 bg-slate-950 p-4 text-sm text-slate-500">
+      <div className="rounded-lg border border-neutral-800 bg-neutral-950 p-4 text-sm text-neutral-500">
         Fill in the required fields to see results.
       </div>
     );
@@ -29,14 +29,14 @@ export default function ResultsPanel({ mode, outputs, errors }) {
   const labels = outputLabelsFor(mode);
 
   return (
-    <div className="rounded-lg border border-slate-800 bg-slate-950 p-4">
-      <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+    <div className="rounded-lg border border-neutral-800 bg-neutral-950 p-4">
+      <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-neutral-500">
         Results — estimates based on the assumptions entered above
       </p>
       <div className="grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2">
         {Object.entries(labels).map(([key, meta]) => (
-          <div key={key} className="flex items-baseline justify-between gap-3 border-b border-slate-900 py-1">
-            <span className="text-xs text-slate-400">{meta.label}</span>
+          <div key={key} className="flex items-baseline justify-between gap-3 border-b border-neutral-900 py-1">
+            <span className="text-xs text-neutral-400">{meta.label}</span>
             <span className="text-sm font-medium text-white">
               {formatOutputValue(outputs[key], meta.format)}
             </span>

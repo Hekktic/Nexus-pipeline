@@ -2,35 +2,82 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Color layouts: the neutral gray scale (bg/border/text) never changes
+ * between layouts — only the accent used for buttons, links, and focus
+ * rings does. ThemeToggle sets data-theme on <html>; "mono" (default,
+ * matches :root) needs no attribute.
+ */
+:root {
+  --accent: #ffffff;
+  --accent-hover: #e5e5e5;
+  --accent-contrast: #0a0a0a;
+  --accent-text: #d4d4d4;
+  --accent-text-hover: #ffffff;
+}
+
+:root[data-theme="blue"] {
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-contrast: #ffffff;
+  --accent-text: #60a5fa;
+  --accent-text-hover: #93c5fd;
+}
+
+:root[data-theme="green"] {
+  --accent: #059669;
+  --accent-hover: #047857;
+  --accent-contrast: #ffffff;
+  --accent-text: #34d399;
+  --accent-text-hover: #6ee7b7;
+}
+
 @layer base {
   html,
   body {
-    @apply bg-slate-950 text-slate-100 antialiased;
+    @apply bg-neutral-950 text-neutral-100 antialiased;
   }
 }
 
 @layer components {
   /* Shared form control, lifted out of the prototype's inline <style> blocks. */
   .input {
-    @apply w-full rounded-md border border-slate-700 bg-slate-950 px-2.5 py-2 text-sm text-white;
+    @apply w-full rounded-md border border-neutral-700 bg-neutral-950 px-2.5 py-2 text-sm text-white;
   }
   .input:focus {
-    @apply border-white outline-none;
+    outline: none;
+    border-color: var(--accent-text);
   }
   .input::placeholder {
-    @apply text-slate-500;
+    @apply text-neutral-500;
   }
   .input:disabled {
     @apply cursor-not-allowed opacity-60;
   }
 
   .input-sm {
-    @apply rounded-md border border-slate-700 bg-slate-950 px-2 py-1.5 text-[13px] text-white;
+    @apply rounded-md border border-neutral-700 bg-neutral-950 px-2 py-1.5 text-[13px] text-white;
   }
   .input-sm:focus {
-    @apply border-white outline-none;
+    outline: none;
+    border-color: var(--accent-text);
   }
   .input-sm::placeholder {
-    @apply text-slate-500;
+    @apply text-neutral-500;
+  }
+
+  .btn-accent {
+    background-color: var(--accent);
+    color: var(--accent-contrast);
+  }
+  .btn-accent:hover:not(:disabled) {
+    background-color: var(--accent-hover);
+  }
+
+  .link-accent {
+    color: var(--accent-text);
+  }
+  .link-accent:hover {
+    color: var(--accent-text-hover);
   }
 }

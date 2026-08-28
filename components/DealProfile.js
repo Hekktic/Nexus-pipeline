@@ -69,7 +69,7 @@ export default function DealProfile({ deal, subject, teamMembers = [], timeline 
 
   return (
     <div className="space-y-6">
-      <Link href="/pipeline" className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-slate-200">
+      <Link href="/pipeline" className="flex items-center gap-1.5 text-sm text-neutral-400 hover:text-neutral-200">
         <ArrowLeft size={14} /> Back to pipeline
       </Link>
 
@@ -84,7 +84,7 @@ export default function DealProfile({ deal, subject, teamMembers = [], timeline 
               "Unknown subject"
             )}
           </h1>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-neutral-500">
             {deal.subject_type} deal · Updated <TimeAgo ts={deal.updated_at} />
           </p>
         </div>
@@ -121,7 +121,7 @@ export default function DealProfile({ deal, subject, teamMembers = [], timeline 
             </button>
             <button
               onClick={() => setPendingLostReason(null)}
-              className="rounded-md px-3 py-1.5 text-xs text-slate-400 hover:text-slate-200"
+              className="rounded-md px-3 py-1.5 text-xs text-neutral-400 hover:text-neutral-200"
             >
               Cancel
             </button>
@@ -130,7 +130,7 @@ export default function DealProfile({ deal, subject, teamMembers = [], timeline 
       )}
 
       {deal.stage === "lost" && deal.lost_reason && (
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-neutral-400">
           <span className={`mr-2 rounded px-1.5 py-0.5 text-[10px] uppercase text-white ${meta.color}`}>{meta.label}</span>
           {deal.lost_reason}
         </p>
@@ -138,7 +138,7 @@ export default function DealProfile({ deal, subject, teamMembers = [], timeline 
 
       <TagsEditor subjectType="deal" subjectId={deal.id} tags={tags} allTagNames={allTagNames} />
 
-      <div className="rounded-lg border border-slate-800 bg-slate-950 p-4">
+      <div className="rounded-lg border border-neutral-800 bg-neutral-950 p-4">
         <h2 className="mb-3 text-sm font-semibold text-white">Deal details</h2>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Field label="Deal value">
@@ -179,7 +179,7 @@ export default function DealProfile({ deal, subject, teamMembers = [], timeline 
           <button
             onClick={save}
             disabled={pending}
-            className="rounded-md bg-white px-4 py-2 text-sm font-medium text-slate-950 transition-colors hover:bg-slate-200 disabled:opacity-50"
+            className="btn-accent rounded-md px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50"
           >
             {pending ? "Saving..." : "Save"}
           </button>
@@ -187,7 +187,7 @@ export default function DealProfile({ deal, subject, teamMembers = [], timeline 
         </div>
       </div>
 
-      <div className="rounded-lg border border-slate-800 bg-slate-950 p-4">
+      <div className="rounded-lg border border-neutral-800 bg-neutral-950 p-4">
         <h2 className="mb-3 text-sm font-semibold text-white">Activity</h2>
         <Timeline subjectType="deal" subjectId={deal.id} timeline={timeline} />
       </div>

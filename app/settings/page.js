@@ -3,6 +3,7 @@ import CenteredScreen from "@/components/CenteredScreen";
 import ComingSoonPage from "@/components/ComingSoonPage";
 import SetupNotice from "@/components/SetupNotice";
 import TeamMembersSection from "@/components/TeamMembersSection";
+import ThemeToggle from "@/components/ThemeToggle";
 import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 
@@ -20,6 +21,14 @@ export default async function SettingsPage() {
   return (
     <AppShell subtitle="Team, pipeline stages, tags, and business info">
       <div className="space-y-8">
+        <section>
+          <h2 className="mb-1 text-sm font-semibold text-white">Appearance</h2>
+          <p className="mb-3 text-xs text-neutral-500">
+            Only changes how the site looks on this device — everyone else keeps their own choice.
+          </p>
+          <ThemeToggle />
+        </section>
+
         <section>
           <h2 className="mb-3 text-sm font-semibold text-white">Team members</h2>
           {error ? (

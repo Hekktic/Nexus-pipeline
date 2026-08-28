@@ -35,8 +35,8 @@ export default function TeamMembersSection({ members = [] }) {
 
   return (
     <div className="space-y-5">
-      <div className="rounded-lg border border-slate-800 bg-slate-950 p-4">
-        <p className="mb-3 text-sm font-medium text-slate-200">Add a team member</p>
+      <div className="rounded-lg border border-neutral-800 bg-neutral-950 p-4">
+        <p className="mb-3 text-sm font-medium text-neutral-200">Add a team member</p>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr_auto]">
           <Field label="Name">
             <input
@@ -60,7 +60,7 @@ export default function TeamMembersSection({ members = [] }) {
             <button
               onClick={submit}
               disabled={pending || !displayName.trim()}
-              className="flex items-center gap-1.5 rounded-md bg-white px-3 py-2 text-sm font-medium text-slate-950 transition-colors hover:bg-slate-200 disabled:opacity-50"
+              className="btn-accent flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors disabled:opacity-50"
             >
               <Plus size={14} /> Add
             </button>
@@ -69,16 +69,16 @@ export default function TeamMembersSection({ members = [] }) {
         {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
       </div>
 
-      <div className="rounded-lg border border-slate-800 bg-slate-950">
-        <p className="border-b border-slate-800 px-4 py-3 text-sm font-medium text-slate-200">
+      <div className="rounded-lg border border-neutral-800 bg-neutral-950">
+        <p className="border-b border-neutral-800 px-4 py-3 text-sm font-medium text-neutral-200">
           Active ({active.length})
         </p>
         {active.length === 0 ? (
-          <p className="px-4 py-6 text-center text-sm text-slate-500">
+          <p className="px-4 py-6 text-center text-sm text-neutral-500">
             No team members yet — add one above.
           </p>
         ) : (
-          <div className="divide-y divide-slate-800">
+          <div className="divide-y divide-neutral-800">
             {active.map((m) => (
               <MemberRow key={m.id} member={m} />
             ))}
@@ -87,11 +87,11 @@ export default function TeamMembersSection({ members = [] }) {
       </div>
 
       {inactive.length > 0 && (
-        <div className="rounded-lg border border-slate-800 bg-slate-950">
-          <p className="border-b border-slate-800 px-4 py-3 text-sm font-medium text-slate-500">
+        <div className="rounded-lg border border-neutral-800 bg-neutral-950">
+          <p className="border-b border-neutral-800 px-4 py-3 text-sm font-medium text-neutral-500">
             Inactive ({inactive.length})
           </p>
-          <div className="divide-y divide-slate-800">
+          <div className="divide-y divide-neutral-800">
             {inactive.map((m) => (
               <MemberRow key={m.id} member={m} />
             ))}
@@ -144,13 +144,13 @@ function MemberRow({ member }) {
         <button
           onClick={save}
           disabled={pending || !displayName.trim()}
-          className="rounded-md bg-white px-2.5 py-1 text-xs font-medium text-slate-950 hover:bg-slate-200 disabled:opacity-50"
+          className="btn-accent rounded-md px-2.5 py-1 text-xs font-medium disabled:opacity-50"
         >
           Save
         </button>
         <button
           onClick={() => setEditing(false)}
-          className="rounded-md px-2.5 py-1 text-xs text-slate-400 hover:bg-slate-900 hover:text-slate-200"
+          className="rounded-md px-2.5 py-1 text-xs text-neutral-400 hover:bg-neutral-900 hover:text-neutral-200"
         >
           Cancel
         </button>
@@ -162,12 +162,12 @@ function MemberRow({ member }) {
   return (
     <div className="flex items-center gap-3 px-4 py-3">
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm text-slate-200">{member.display_name}</p>
-        {member.role && <p className="truncate text-xs text-slate-500">{member.role}</p>}
+        <p className="truncate text-sm text-neutral-200">{member.display_name}</p>
+        {member.role && <p className="truncate text-xs text-neutral-500">{member.role}</p>}
       </div>
       <button
         onClick={() => setEditing(true)}
-        className="rounded-md p-1.5 text-slate-500 hover:bg-slate-900 hover:text-slate-300"
+        className="rounded-md p-1.5 text-neutral-500 hover:bg-neutral-900 hover:text-neutral-300"
         title="Edit"
       >
         <Pencil size={14} />
@@ -175,7 +175,7 @@ function MemberRow({ member }) {
       <button
         onClick={toggleActive}
         disabled={pending}
-        className="rounded-md border border-slate-700 px-2.5 py-1 text-xs text-slate-400 transition-colors hover:bg-slate-900 hover:text-slate-200 disabled:opacity-50"
+        className="rounded-md border border-neutral-700 px-2.5 py-1 text-xs text-neutral-400 transition-colors hover:bg-neutral-900 hover:text-neutral-200 disabled:opacity-50"
       >
         {member.is_active ? "Deactivate" : "Reactivate"}
       </button>
