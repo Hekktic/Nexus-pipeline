@@ -284,7 +284,7 @@ export default function LogForm({ recent = [] }) {
       <button
         onClick={() => submit(false)}
         disabled={pending}
-        className="w-full rounded-md bg-amber-500 py-2.5 font-medium text-slate-950 transition-colors hover:bg-amber-400 disabled:opacity-60"
+        className="w-full rounded-md bg-white py-2.5 font-medium text-slate-950 transition-colors hover:bg-slate-200 disabled:opacity-60"
       >
         {pending ? "Adding..." : "Add to pipeline"}
       </button>

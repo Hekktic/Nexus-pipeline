@@ -118,7 +118,7 @@ export default function PipelineCard({ entry, expanded, onToggle }) {
         <div className="space-y-3 border-t border-slate-800 px-3 pb-3 pt-3">
           <Link
             href={`/${entry.kind}s/${entry.id}`}
-            className="flex items-center gap-1 text-xs text-amber-500 hover:text-amber-400"
+            className="flex items-center gap-1 text-xs text-slate-300 hover:text-white"
           >
             View full profile <ExternalLink size={11} />
           </Link>
@@ -152,7 +152,7 @@ export default function PipelineCard({ entry, expanded, onToggle }) {
               <button
                 onClick={submitNote}
                 disabled={pending || !noteDraft.trim()}
-                className="shrink-0 rounded-md bg-amber-500 px-3 text-xs font-medium text-slate-950 transition-colors hover:bg-amber-400 disabled:opacity-50"
+                className="shrink-0 rounded-md bg-white px-3 text-xs font-medium text-slate-950 transition-colors hover:bg-slate-200 disabled:opacity-50"
               >
                 Add
               </button>

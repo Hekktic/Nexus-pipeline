@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Image from "next/image";
 import { Loader2, Lock } from "lucide-react";
 import { login } from "@/app/actions";
 
@@ -22,11 +23,11 @@ export default function LoginForm() {
 
   return (
     <div className="mx-auto w-full max-w-md overflow-hidden rounded-lg border border-slate-800 bg-slate-950">
-      <div className="border-b border-slate-800 bg-slate-900 px-5 py-4">
-        <h1 className="text-lg font-semibold tracking-tight text-white">
-          Nexus Pipeline
-        </h1>
-        <p className="text-xs text-slate-400">Shared contact log &amp; deal tracker</p>
+      <div className="border-b border-slate-800 bg-slate-900 px-5 py-6">
+        <div className="relative mx-auto h-16 w-full max-w-[260px]">
+          <Image src="/logo/full.png" alt="Nexus Creator Network" fill sizes="260px" className="object-contain" priority />
+        </div>
+        <p className="mt-2 text-center text-xs text-slate-400">Shared contact log &amp; deal tracker</p>
       </div>
 
       <div className="p-5">
@@ -53,7 +54,7 @@ export default function LoginForm() {
           <button
             type="submit"
             disabled={pending}
-            className="flex w-full items-center justify-center gap-2 rounded-md bg-amber-500 py-2.5 font-medium text-slate-950 transition-colors hover:bg-amber-400 disabled:opacity-60"
+            className="flex w-full items-center justify-center gap-2 rounded-md bg-white py-2.5 font-medium text-slate-950 transition-colors hover:bg-slate-200 disabled:opacity-60"
           >
             {pending ? (
               <>

@@ -23,6 +23,7 @@ import {
   Users,
   X,
 } from "lucide-react";
+import Image from "next/image";
 import { signOut } from "@/app/actions";
 
 const NAV = [
@@ -45,8 +46,8 @@ const COLLAPSE_KEY = "nexus:sidebar-collapsed";
 function Logo({ collapsed }) {
   return (
     <div className="flex items-center gap-2 overflow-hidden">
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-amber-500 text-sm font-bold text-slate-950">
-        N
+      <span className="relative flex h-7 w-7 shrink-0 items-center justify-center">
+        <Image src="/logo/icon.png" alt="" fill sizes="28px" className="object-contain" priority />
       </span>
       {!collapsed && (
         <span className="truncate text-sm font-semibold tracking-tight text-white">
@@ -145,7 +146,7 @@ export default function Sidebar() {
               <Link
                 href="/log"
                 onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-2.5 rounded-md bg-amber-500 px-2.5 py-2 text-sm font-medium text-slate-950 hover:bg-amber-400"
+                className="flex items-center gap-2.5 rounded-md bg-white px-2.5 py-2 text-sm font-medium text-slate-950 hover:bg-slate-200"
               >
                 <Plus size={16} /> Add
               </Link>
@@ -178,7 +179,7 @@ export default function Sidebar() {
           <Link
             href="/log"
             title="Add"
-            className="flex items-center gap-2.5 rounded-md bg-amber-500 px-2.5 py-2 text-sm font-medium text-slate-950 hover:bg-amber-400"
+            className="flex items-center gap-2.5 rounded-md bg-white px-2.5 py-2 text-sm font-medium text-slate-950 hover:bg-slate-200"
           >
             <Plus size={16} className="shrink-0" />
             {!collapsed && "Add"}

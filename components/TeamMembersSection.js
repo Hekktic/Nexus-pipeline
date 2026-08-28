@@ -60,7 +60,7 @@ export default function TeamMembersSection({ members = [] }) {
             <button
               onClick={submit}
               disabled={pending || !displayName.trim()}
-              className="flex items-center gap-1.5 rounded-md bg-amber-500 px-3 py-2 text-sm font-medium text-slate-950 transition-colors hover:bg-amber-400 disabled:opacity-50"
+              className="flex items-center gap-1.5 rounded-md bg-white px-3 py-2 text-sm font-medium text-slate-950 transition-colors hover:bg-slate-200 disabled:opacity-50"
             >
               <Plus size={14} /> Add
             </button>
@@ -144,7 +144,7 @@ function MemberRow({ member }) {
         <button
           onClick={save}
           disabled={pending || !displayName.trim()}
-          className="rounded-md bg-amber-500 px-2.5 py-1 text-xs font-medium text-slate-950 hover:bg-amber-400 disabled:opacity-50"
+          className="rounded-md bg-white px-2.5 py-1 text-xs font-medium text-slate-950 hover:bg-slate-200 disabled:opacity-50"
         >
           Save
         </button>

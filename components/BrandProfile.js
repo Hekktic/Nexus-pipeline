@@ -237,7 +237,7 @@ export default function BrandProfile({ brand, teamMembers = [], timeline = [], t
         <button
           onClick={save}
           disabled={pending || !form.name.trim() || !form.contact.trim()}
-          className="rounded-md bg-amber-500 px-4 py-2 text-sm font-medium text-slate-950 transition-colors hover:bg-amber-400 disabled:opacity-50"
+          className="rounded-md bg-white px-4 py-2 text-sm font-medium text-slate-950 transition-colors hover:bg-slate-200 disabled:opacity-50"
         >
           {pending ? "Saving..." : "Save profile"}
         </button>

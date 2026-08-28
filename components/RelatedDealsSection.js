@@ -9,7 +9,7 @@ export default function RelatedDealsSection({ deals = [] }) {
     <div className="rounded-lg border border-slate-800 bg-slate-950 p-4">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-sm font-semibold text-white">Deals</h2>
-        <Link href="/pipeline" className="flex items-center gap-1 text-xs text-amber-500 hover:text-amber-400">
+        <Link href="/pipeline" className="flex items-center gap-1 text-xs text-slate-300 hover:text-white">
           <Plus size={12} /> New deal
         </Link>
       </div>

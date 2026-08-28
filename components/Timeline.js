@@ -56,7 +56,7 @@ export default function Timeline({ subjectType, subjectId, timeline = [] }) {
         <button
           onClick={submitNote}
           disabled={pending || !noteDraft.trim()}
-          className="shrink-0 rounded-md bg-amber-500 px-3 text-xs font-medium text-slate-950 transition-colors hover:bg-amber-400 disabled:opacity-50"
+          className="shrink-0 rounded-md bg-white px-3 text-xs font-medium text-slate-950 transition-colors hover:bg-slate-200 disabled:opacity-50"
         >
           Add
         </button>
@@ -74,7 +74,7 @@ export default function Timeline({ subjectType, subjectId, timeline = [] }) {
               <div key={`${item.kind}-${item.id}`} className="flex gap-2 text-sm">
                 <Icon
                   size={12}
-                  className={`mt-1 shrink-0 ${item.kind === "note" ? "text-slate-600" : "text-amber-500"}`}
+                  className={`mt-1 shrink-0 ${item.kind === "note" ? "text-slate-600" : "text-slate-300"}`}
                 />
                 <div className="min-w-0">
                   <span
