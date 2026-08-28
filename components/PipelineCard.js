@@ -59,8 +59,8 @@ export default function PipelineCard({ entry, expanded, onToggle }) {
 
   return (
     <div
-      className={`rounded-md border bg-slate-900 ${
-        pending ? "border-slate-700 opacity-80" : "border-slate-800"
+      className={`rounded-md border bg-neutral-900 ${
+        pending ? "border-neutral-700 opacity-80" : "border-neutral-800"
       }`}
     >
       <button
@@ -83,7 +83,7 @@ export default function PipelineCard({ entry, expanded, onToggle }) {
 
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-white">{entry.name}</p>
-          <p className="truncate text-xs text-slate-500">
+          <p className="truncate text-xs text-neutral-500">
             {isBrand ? "Brand" : "Creator"} · {entry.category || "no category"} ·{" "}
             {isBrand ? entry.contact : platformSummary || entry.contact}
           </p>
@@ -94,7 +94,7 @@ export default function PipelineCard({ entry, expanded, onToggle }) {
             {entry.tags.slice(0, 3).map((t) => (
               <span
                 key={t.contactTagId}
-                className="rounded-full border border-slate-700 px-2 py-0.5 text-[10px] text-slate-400"
+                className="rounded-full border border-neutral-700 px-2 py-0.5 text-[10px] text-neutral-400"
               >
                 {t.name}
               </span>
@@ -104,21 +104,21 @@ export default function PipelineCard({ entry, expanded, onToggle }) {
 
         <TimeAgo
           ts={entry.updated_at}
-          className="hidden shrink-0 text-xs text-slate-600 sm:inline"
+          className="hidden shrink-0 text-xs text-neutral-600 sm:inline"
         />
 
         {expanded ? (
-          <ChevronUp size={16} className="shrink-0 text-slate-500" />
+          <ChevronUp size={16} className="shrink-0 text-neutral-500" />
         ) : (
-          <ChevronDown size={16} className="shrink-0 text-slate-500" />
+          <ChevronDown size={16} className="shrink-0 text-neutral-500" />
         )}
       </button>
 
       {expanded && (
-        <div className="space-y-3 border-t border-slate-800 px-3 pb-3 pt-3">
+        <div className="space-y-3 border-t border-neutral-800 px-3 pb-3 pt-3">
           <Link
             href={`/${entry.kind}s/${entry.id}`}
-            className="flex items-center gap-1 text-xs text-slate-300 hover:text-white"
+            className="link-accent flex items-center gap-1 text-xs"
           >
             View full profile <ExternalLink size={11} />
           </Link>
@@ -135,7 +135,7 @@ export default function PipelineCard({ entry, expanded, onToggle }) {
           )}
 
           <div>
-            <p className="mb-1 text-xs text-slate-500">Call log</p>
+            <p className="mb-1 text-xs text-neutral-500">Call log</p>
             <div className="mb-2 flex gap-2">
               <input
                 className="input-sm flex-1"
@@ -152,22 +152,22 @@ export default function PipelineCard({ entry, expanded, onToggle }) {
               <button
                 onClick={submitNote}
                 disabled={pending || !noteDraft.trim()}
-                className="shrink-0 rounded-md bg-white px-3 text-xs font-medium text-slate-950 transition-colors hover:bg-slate-200 disabled:opacity-50"
+                className="btn-accent shrink-0 rounded-md px-3 text-xs font-medium transition-colors disabled:opacity-50"
               >
                 Add
               </button>
             </div>
 
             {callLogs.length === 0 ? (
-              <p className="text-xs text-slate-600">No call notes yet.</p>
+              <p className="text-xs text-neutral-600">No call notes yet.</p>
             ) : (
               <div className="max-h-40 space-y-1.5 overflow-y-auto">
                 {callLogs.map((c) => (
-                  <div key={c.id} className="flex gap-2 text-sm text-slate-300">
-                    <Clock size={12} className="mt-1 shrink-0 text-slate-600" />
+                  <div key={c.id} className="flex gap-2 text-sm text-neutral-300">
+                    <Clock size={12} className="mt-1 shrink-0 text-neutral-600" />
                     <div className="min-w-0">
                       <span className="break-words">{c.text}</span>
-                      <TimeAgo ts={c.created_at} className="ml-2 text-xs text-slate-600" />
+                      <TimeAgo ts={c.created_at} className="ml-2 text-xs text-neutral-600" />
                     </div>
                   </div>
                 ))}
@@ -187,31 +187,31 @@ function BrandDetail({ entry, pending, onChangeStatus }) {
     <>
       <div className="grid grid-cols-2 gap-3 text-sm">
         <div>
-          <p className="text-xs text-slate-500">Website</p>
-          <p className="break-words text-slate-200">{entry.website || "—"}</p>
+          <p className="text-xs text-neutral-500">Website</p>
+          <p className="break-words text-neutral-200">{entry.website || "—"}</p>
         </div>
         <div>
-          <p className="text-xs text-slate-500">Logged by</p>
-          <p className="break-words text-slate-200">{entry.logged_by || "—"}</p>
+          <p className="text-xs text-neutral-500">Logged by</p>
+          <p className="break-words text-neutral-200">{entry.logged_by || "—"}</p>
         </div>
       </div>
 
       {entry.margin_notes && (
         <div>
-          <p className="text-xs text-slate-500">Margin notes</p>
-          <p className="whitespace-pre-wrap text-sm text-slate-300">{entry.margin_notes}</p>
+          <p className="text-xs text-neutral-500">Margin notes</p>
+          <p className="whitespace-pre-wrap text-sm text-neutral-300">{entry.margin_notes}</p>
         </div>
       )}
 
       {entry.fulfillment_notes && (
         <div>
-          <p className="text-xs text-slate-500">Fulfillment notes</p>
-          <p className="whitespace-pre-wrap text-sm text-slate-300">{entry.fulfillment_notes}</p>
+          <p className="text-xs text-neutral-500">Fulfillment notes</p>
+          <p className="whitespace-pre-wrap text-sm text-neutral-300">{entry.fulfillment_notes}</p>
         </div>
       )}
 
       <div>
-        <p className="mb-1 text-xs text-slate-500">Status</p>
+        <p className="mb-1 text-xs text-neutral-500">Status</p>
         <select
           className="input-sm"
           value={entry.status}
@@ -236,19 +236,19 @@ function CreatorDetail({ entry, pending, onChangeVetting, onChangeOnboarding }) 
     <>
       <div className="grid grid-cols-2 gap-3 text-sm">
         <div>
-          <p className="text-xs text-slate-500">Contact</p>
-          <p className="break-words text-slate-200">{entry.contact || "—"}</p>
+          <p className="text-xs text-neutral-500">Contact</p>
+          <p className="break-words text-neutral-200">{entry.contact || "—"}</p>
         </div>
         <div>
-          <p className="text-xs text-slate-500">Logged by</p>
-          <p className="break-words text-slate-200">{entry.logged_by || "—"}</p>
+          <p className="text-xs text-neutral-500">Logged by</p>
+          <p className="break-words text-neutral-200">{entry.logged_by || "—"}</p>
         </div>
       </div>
 
       {platforms.length > 0 && (
         <div>
-          <p className="text-xs text-slate-500">Platforms</p>
-          <p className="text-sm text-slate-200">
+          <p className="text-xs text-neutral-500">Platforms</p>
+          <p className="text-sm text-neutral-200">
             {platforms.map(([p, count]) => (count ? `${p} (${count})` : p)).join(", ")}
           </p>
         </div>
@@ -256,21 +256,21 @@ function CreatorDetail({ entry, pending, onChangeVetting, onChangeOnboarding }) 
 
       {entry.audience_demographics && (
         <div>
-          <p className="text-xs text-slate-500">Audience demographics</p>
-          <p className="whitespace-pre-wrap text-sm text-slate-300">{entry.audience_demographics}</p>
+          <p className="text-xs text-neutral-500">Audience demographics</p>
+          <p className="whitespace-pre-wrap text-sm text-neutral-300">{entry.audience_demographics}</p>
         </div>
       )}
 
       {entry.pricing_expectations && (
         <div>
-          <p className="text-xs text-slate-500">Pricing expectations</p>
-          <p className="text-sm text-slate-300">{entry.pricing_expectations}</p>
+          <p className="text-xs text-neutral-500">Pricing expectations</p>
+          <p className="text-sm text-neutral-300">{entry.pricing_expectations}</p>
         </div>
       )}
 
       <div className="flex flex-wrap gap-3">
         <div>
-          <p className="mb-1 text-xs text-slate-500">Vetting</p>
+          <p className="mb-1 text-xs text-neutral-500">Vetting</p>
           <select
             className="input-sm"
             value={entry.vetting_status}
@@ -286,7 +286,7 @@ function CreatorDetail({ entry, pending, onChangeVetting, onChangeOnboarding }) 
         </div>
 
         <div>
-          <p className="mb-1 text-xs text-slate-500">Onboarding</p>
+          <p className="mb-1 text-xs text-neutral-500">Onboarding</p>
           <select
             className="input-sm"
             value={entry.onboarding_status}

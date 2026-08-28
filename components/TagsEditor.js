@@ -42,13 +42,13 @@ export default function TagsEditor({ subjectType, subjectId, tags = [], allTagNa
         {tags.map((t) => (
           <span
             key={t.contactTagId}
-            className="flex items-center gap-1 rounded-full border border-slate-700 bg-slate-900 px-2.5 py-1 text-xs text-slate-300"
+            className="flex items-center gap-1 rounded-full border border-neutral-700 bg-neutral-900 px-2.5 py-1 text-xs text-neutral-300"
           >
             {t.name}
             <button
               onClick={() => remove(t.contactTagId)}
               disabled={pending}
-              className="text-slate-500 hover:text-slate-200"
+              className="text-neutral-500 hover:text-neutral-200"
               title="Remove tag"
             >
               <X size={11} />
@@ -78,7 +78,7 @@ export default function TagsEditor({ subjectType, subjectId, tags = [], allTagNa
           <button
             onClick={submit}
             disabled={pending || !draft.trim()}
-            className="rounded-md p-1.5 text-slate-500 transition-colors hover:bg-slate-800 hover:text-slate-200 disabled:opacity-30"
+            className="rounded-md p-1.5 text-neutral-500 transition-colors hover:bg-neutral-800 hover:text-neutral-200 disabled:opacity-30"
             title="Add tag"
           >
             <Plus size={14} />

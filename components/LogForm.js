@@ -177,7 +177,7 @@ export default function LogForm({ recent = [] }) {
                     type="button"
                     onClick={() => removePlatformRow(i)}
                     disabled={creator.platforms.length === 1}
-                    className="shrink-0 rounded-md p-2 text-slate-500 transition-colors hover:bg-slate-800 hover:text-slate-200 disabled:opacity-30"
+                    className="shrink-0 rounded-md p-2 text-neutral-500 transition-colors hover:bg-neutral-800 hover:text-neutral-200 disabled:opacity-30"
                     title="Remove platform"
                   >
                     <X size={14} />
@@ -187,7 +187,7 @@ export default function LogForm({ recent = [] }) {
               <button
                 type="button"
                 onClick={addPlatformRow}
-                className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-200"
+                className="flex items-center gap-1 text-xs text-neutral-400 hover:text-neutral-200"
               >
                 <Plus size={12} /> Add platform
               </button>
@@ -273,7 +273,7 @@ export default function LogForm({ recent = [] }) {
             </button>
             <button
               onClick={() => setDuplicateMatches(null)}
-              className="rounded-md px-3 py-1.5 text-xs text-slate-400 hover:text-slate-200"
+              className="rounded-md px-3 py-1.5 text-xs text-neutral-400 hover:text-neutral-200"
             >
               Cancel
             </button>
@@ -284,7 +284,7 @@ export default function LogForm({ recent = [] }) {
       <button
         onClick={() => submit(false)}
         disabled={pending}
-        className="w-full rounded-md bg-white py-2.5 font-medium text-slate-950 transition-colors hover:bg-slate-200 disabled:opacity-60"
+        className="btn-accent w-full rounded-md py-2.5 font-medium transition-colors disabled:opacity-60"
       >
         {pending ? "Adding..." : "Add to pipeline"}
       </button>
@@ -294,8 +294,8 @@ export default function LogForm({ recent = [] }) {
       )}
 
       {recent.length > 0 && (
-        <div className="border-t border-slate-800 pt-3">
-          <p className="mb-2 text-xs text-slate-500">Recently added</p>
+        <div className="border-t border-neutral-800 pt-3">
+          <p className="mb-2 text-xs text-neutral-500">Recently added</p>
           <div className="space-y-1">
             {recent.map((r) => {
               const meta =
@@ -303,13 +303,13 @@ export default function LogForm({ recent = [] }) {
               return (
                 <div
                   key={`${r.kind}-${r.id}`}
-                  className="flex items-center gap-2 text-sm text-slate-400"
+                  className="flex items-center gap-2 text-sm text-neutral-400"
                 >
                   <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${meta.color}`} />
-                  <span className="truncate text-slate-200">{r.name}</span>
-                  <span className="text-slate-600">·</span>
+                  <span className="truncate text-neutral-200">{r.name}</span>
+                  <span className="text-neutral-600">·</span>
                   <span className="capitalize">{r.kind}</span>
-                  <TimeAgo ts={r.created_at} className="ml-auto shrink-0 text-slate-600" />
+                  <TimeAgo ts={r.created_at} className="ml-auto shrink-0 text-neutral-600" />
                 </div>
               );
             })}
@@ -327,8 +327,8 @@ function TypeToggle({ value, current, onClick, label }) {
       onClick={() => onClick(value)}
       className={`flex-1 rounded-md py-2 text-sm font-medium transition-colors ${
         active
-          ? "bg-slate-700 text-white"
-          : "border border-slate-800 bg-slate-900 text-slate-500"
+          ? "bg-neutral-700 text-white"
+          : "border border-neutral-800 bg-neutral-900 text-neutral-500"
       }`}
     >
       {label}

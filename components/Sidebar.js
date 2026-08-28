@@ -69,10 +69,11 @@ function NavLinks({ pathname, onNavigate }) {
             key={item.href}
             href={item.href}
             onClick={onNavigate}
-            className={`flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors ${
+            style={active ? { borderColor: "var(--accent-text)" } : undefined}
+            className={`flex items-center gap-2.5 rounded-md border-l-2 px-2 py-2 text-sm transition-colors ${
               active
-                ? "bg-slate-800 text-white"
-                : "text-slate-400 hover:bg-slate-900 hover:text-slate-200"
+                ? "bg-neutral-800 text-white"
+                : "border-transparent text-neutral-400 hover:bg-neutral-900 hover:text-neutral-200"
             }`}
           >
             <Icon size={16} className="shrink-0" />
@@ -112,11 +113,11 @@ export default function Sidebar() {
   return (
     <>
       {/* Mobile top bar */}
-      <div className="flex items-center justify-between border-b border-slate-800 bg-slate-900 px-4 py-3 md:hidden">
+      <div className="flex items-center justify-between border-b border-neutral-800 bg-neutral-900 px-4 py-3 md:hidden">
         <Logo collapsed={false} />
         <button
           onClick={() => setMobileOpen(true)}
-          className="rounded-md p-2 text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+          className="rounded-md p-2 text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200"
           aria-label="Open navigation"
         >
           <Menu size={20} />
@@ -130,12 +131,12 @@ export default function Sidebar() {
             className="absolute inset-0 bg-black/60"
             onClick={() => setMobileOpen(false)}
           />
-          <div className="absolute inset-y-0 left-0 flex w-64 flex-col border-r border-slate-800 bg-slate-950 py-3">
+          <div className="absolute inset-y-0 left-0 flex w-64 flex-col border-r border-neutral-800 bg-neutral-950 py-3">
             <div className="flex items-center justify-between px-3 pb-3">
               <Logo collapsed={false} />
               <button
                 onClick={() => setMobileOpen(false)}
-                className="rounded-md p-2 text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+                className="rounded-md p-2 text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200"
                 aria-label="Close navigation"
               >
                 <X size={18} />
@@ -146,14 +147,14 @@ export default function Sidebar() {
               <Link
                 href="/log"
                 onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-2.5 rounded-md bg-white px-2.5 py-2 text-sm font-medium text-slate-950 hover:bg-slate-200"
+                className="btn-accent flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium"
               >
                 <Plus size={16} /> Add
               </Link>
               <form action={signOut}>
                 <button
                   type="submit"
-                  className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-sm text-slate-400 hover:bg-slate-900 hover:text-slate-200"
+                  className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-sm text-neutral-400 hover:bg-neutral-900 hover:text-neutral-200"
                 >
                   <LogOut size={16} /> Sign out
                 </button>
@@ -165,7 +166,7 @@ export default function Sidebar() {
 
       {/* Desktop sidebar */}
       <div
-        className={`hidden shrink-0 flex-col border-r border-slate-800 bg-slate-950 py-3 transition-[width] md:flex ${
+        className={`hidden shrink-0 flex-col border-r border-neutral-800 bg-neutral-950 py-3 transition-[width] md:flex ${
           collapsed ? "w-16" : "w-56"
         }`}
       >
@@ -179,7 +180,7 @@ export default function Sidebar() {
           <Link
             href="/log"
             title="Add"
-            className="flex items-center gap-2.5 rounded-md bg-white px-2.5 py-2 text-sm font-medium text-slate-950 hover:bg-slate-200"
+            className="btn-accent flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium"
           >
             <Plus size={16} className="shrink-0" />
             {!collapsed && "Add"}
@@ -189,7 +190,7 @@ export default function Sidebar() {
             <button
               type="submit"
               title="Sign out"
-              className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-sm text-slate-400 hover:bg-slate-900 hover:text-slate-200"
+              className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-sm text-neutral-400 hover:bg-neutral-900 hover:text-neutral-200"
             >
               <LogOut size={16} className="shrink-0" />
               {!collapsed && "Sign out"}
@@ -199,7 +200,7 @@ export default function Sidebar() {
           <button
             onClick={toggleCollapsed}
             title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-sm text-slate-500 hover:bg-slate-900 hover:text-slate-300"
+            className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-sm text-neutral-500 hover:bg-neutral-900 hover:text-neutral-300"
           >
             {collapsed ? (
               <ChevronRight size={16} className="shrink-0" />

@@ -98,7 +98,7 @@ export default function AdvancedForm({ values, onChange }) {
 function FieldGroup({ title, children }) {
   return (
     <div>
-      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{title}</p>
+      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">{title}</p>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">{children}</div>
     </div>
   );

@@ -48,7 +48,7 @@ export default function DealsListView({ deals = [], brands = [], creators = [], 
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2">
         <div className="relative min-w-[160px] flex-1">
-          <Search size={14} className="absolute left-2.5 top-2.5 text-slate-500" />
+          <Search size={14} className="absolute left-2.5 top-2.5 text-neutral-500" />
           <input
             className="input pl-8"
             value={query}
@@ -75,7 +75,7 @@ export default function DealsListView({ deals = [], brands = [], creators = [], 
 
         <button
           onClick={() => setShowCreate((v) => !v)}
-          className="flex items-center gap-1.5 rounded-md bg-white px-3 text-sm font-medium text-slate-950 transition-colors hover:bg-slate-200"
+          className="btn-accent flex items-center gap-1.5 rounded-md px-3 text-sm font-medium transition-colors"
         >
           <Plus size={14} /> New deal
         </button>
@@ -94,18 +94,18 @@ export default function DealsListView({ deals = [], brands = [], creators = [], 
       )}
 
       <div className="flex items-center justify-between">
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-neutral-500">
           {filtered.length} of {deals.length} deals
         </p>
         {filtered.length > 0 && (
-          <button onClick={exportCSV} className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200">
+          <button onClick={exportCSV} className="flex items-center gap-1.5 text-xs text-neutral-400 hover:text-neutral-200">
             <Download size={12} /> Export CSV
           </button>
         )}
       </div>
 
       {filtered.length === 0 ? (
-        <div className="py-10 text-center text-sm text-slate-500">
+        <div className="py-10 text-center text-sm text-neutral-500">
           {deals.length === 0 ? "No deals yet — start one above." : "Nothing matches those filters."}
         </div>
       ) : (
@@ -117,14 +117,14 @@ export default function DealsListView({ deals = [], brands = [], creators = [], 
               <Link
                 key={d.id}
                 href={`/deals/${d.id}`}
-                className="flex items-center gap-3 rounded-md border border-slate-800 bg-slate-900 px-3 py-2.5 transition-colors hover:border-slate-700"
+                className="flex items-center gap-3 rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2.5 transition-colors hover:border-neutral-700"
               >
                 <span className={`shrink-0 rounded px-2 py-0.5 text-[10px] uppercase tracking-wide text-white ${meta.color}`}>
                   {meta.label}
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-white">{d.subject.name}</p>
-                  <p className="truncate text-xs text-slate-500">
+                  <p className="truncate text-xs text-neutral-500">
                     {d.subject_type} · {d.deal_value ? `$${Number(d.deal_value).toLocaleString()}` : "no value set"}
                     {d.probability !== null && d.probability !== undefined ? ` · ${d.probability}%` : ""}
                   </p>
@@ -135,9 +135,9 @@ export default function DealsListView({ deals = [], brands = [], creators = [], 
                   </span>
                 )}
                 {d.owner && (
-                  <span className="hidden shrink-0 text-xs text-slate-500 sm:inline">{d.owner.display_name}</span>
+                  <span className="hidden shrink-0 text-xs text-neutral-500 sm:inline">{d.owner.display_name}</span>
                 )}
-                <TimeAgo ts={d.updated_at} className="hidden shrink-0 text-xs text-slate-600 sm:inline" />
+                <TimeAgo ts={d.updated_at} className="hidden shrink-0 text-xs text-neutral-600 sm:inline" />
               </Link>
             );
           })}
@@ -175,7 +175,7 @@ function NewDealForm({ brands, creators, onCreated, onCancel }) {
   };
 
   return (
-    <div className="rounded-lg border border-slate-800 bg-slate-950 p-4">
+    <div className="rounded-lg border border-neutral-800 bg-neutral-950 p-4">
       <div className="mb-3 flex gap-2">
         <TypeToggle value="brand" current={subjectType} onClick={(v) => { setSubjectType(v); setSubjectId(""); }} label="Brand" />
         <TypeToggle value="creator" current={subjectType} onClick={(v) => { setSubjectType(v); setSubjectId(""); }} label="Creator" />
@@ -204,11 +204,11 @@ function NewDealForm({ brands, creators, onCreated, onCancel }) {
         <button
           onClick={submit}
           disabled={pending}
-          className="rounded-md bg-white px-4 py-2 text-sm font-medium text-slate-950 transition-colors hover:bg-slate-200 disabled:opacity-50"
+          className="btn-accent rounded-md px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50"
         >
           {pending ? "Creating..." : "Create deal"}
         </button>
-        <button onClick={onCancel} className="rounded-md px-4 py-2 text-sm text-slate-400 hover:text-slate-200">
+        <button onClick={onCancel} className="rounded-md px-4 py-2 text-sm text-neutral-400 hover:text-neutral-200">
           Cancel
         </button>
       </div>
@@ -222,7 +222,7 @@ function TypeToggle({ value, current, onClick, label }) {
     <button
       onClick={() => onClick(value)}
       className={`flex-1 rounded-md py-2 text-sm font-medium transition-colors ${
-        active ? "bg-slate-700 text-white" : "border border-slate-800 bg-slate-900 text-slate-500"
+        active ? "bg-neutral-700 text-white" : "border border-neutral-800 bg-neutral-900 text-neutral-500"
       }`}
     >
       {label}

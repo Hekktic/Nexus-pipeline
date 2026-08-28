@@ -48,7 +48,7 @@ export default function BrandsListView({ brands = [] }) {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative min-w-[160px] flex-1">
-          <Search size={14} className="absolute left-2.5 top-2.5 text-slate-500" />
+          <Search size={14} className="absolute left-2.5 top-2.5 text-neutral-500" />
           <input
             className="input pl-8"
             value={query}
@@ -69,7 +69,7 @@ export default function BrandsListView({ brands = [] }) {
           ))}
         </select>
         {archivedCount > 0 && (
-          <label className="flex items-center gap-1.5 whitespace-nowrap text-xs text-slate-400">
+          <label className="flex items-center gap-1.5 whitespace-nowrap text-xs text-neutral-400">
             <input
               type="checkbox"
               checked={showArchived}
@@ -81,13 +81,13 @@ export default function BrandsListView({ brands = [] }) {
       </div>
 
       <div className="flex items-center justify-between">
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-neutral-500">
           {filtered.length} of {brands.length} brands
         </p>
         {filtered.length > 0 && (
           <button
             onClick={exportCSV}
-            className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200"
+            className="flex items-center gap-1.5 text-xs text-neutral-400 hover:text-neutral-200"
           >
             <Download size={12} /> Export CSV
           </button>
@@ -95,7 +95,7 @@ export default function BrandsListView({ brands = [] }) {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="py-10 text-center text-sm text-slate-500">
+        <div className="py-10 text-center text-sm text-neutral-500">
           {brands.length === 0
             ? "No brands logged yet. Add one from the Log screen."
             : "Nothing matches those filters."}
@@ -108,7 +108,7 @@ export default function BrandsListView({ brands = [] }) {
               <Link
                 key={b.id}
                 href={`/brands/${b.id}`}
-                className={`flex items-center gap-3 rounded-md border border-slate-800 bg-slate-900 px-3 py-2.5 transition-colors hover:border-slate-700 ${
+                className={`flex items-center gap-3 rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2.5 transition-colors hover:border-neutral-700 ${
                   b.is_archived ? "opacity-50" : ""
                 }`}
               >
@@ -118,13 +118,13 @@ export default function BrandsListView({ brands = [] }) {
                   {meta.label}
                 </span>
                 {b.is_archived && (
-                  <span className="shrink-0 rounded border border-slate-700 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-500">
+                  <span className="shrink-0 rounded border border-neutral-700 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-neutral-500">
                     Archived
                   </span>
                 )}
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-white">{b.name}</p>
-                  <p className="truncate text-xs text-slate-500">
+                  <p className="truncate text-xs text-neutral-500">
                     {b.category || "no category"} · {b.contact}
                   </p>
                 </div>
@@ -133,7 +133,7 @@ export default function BrandsListView({ brands = [] }) {
                     {b.tags.slice(0, 3).map((t) => (
                       <span
                         key={t.contactTagId}
-                        className="rounded-full border border-slate-700 px-2 py-0.5 text-[10px] text-slate-400"
+                        className="rounded-full border border-neutral-700 px-2 py-0.5 text-[10px] text-neutral-400"
                       >
                         {t.name}
                       </span>
@@ -141,11 +141,11 @@ export default function BrandsListView({ brands = [] }) {
                   </div>
                 )}
                 {b.owner && (
-                  <span className="hidden shrink-0 text-xs text-slate-500 sm:inline">
+                  <span className="hidden shrink-0 text-xs text-neutral-500 sm:inline">
                     {b.owner.display_name}
                   </span>
                 )}
-                <TimeAgo ts={b.updated_at} className="hidden shrink-0 text-xs text-slate-600 sm:inline" />
+                <TimeAgo ts={b.updated_at} className="hidden shrink-0 text-xs text-neutral-600 sm:inline" />
               </Link>
             );
           })}

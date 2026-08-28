@@ -58,7 +58,7 @@ export default function PipelineView({ entries = [], allTagNames = [] }) {
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2">
         <div className="relative min-w-[160px] flex-1">
-          <Search size={14} className="absolute left-2.5 top-2.5 text-slate-500" />
+          <Search size={14} className="absolute left-2.5 top-2.5 text-neutral-500" />
           <input
             className="input pl-8"
             value={query}
@@ -139,13 +139,13 @@ export default function PipelineView({ entries = [], allTagNames = [] }) {
       </div>
 
       <div className="flex items-center justify-between">
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-neutral-500">
           {filtered.length} of {entries.length} contacts
         </p>
         {filtered.length > 0 && (
           <button
             onClick={exportCSV}
-            className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200"
+            className="flex items-center gap-1.5 text-xs text-neutral-400 hover:text-neutral-200"
           >
             <Download size={12} /> Export CSV
           </button>
@@ -153,7 +153,7 @@ export default function PipelineView({ entries = [], allTagNames = [] }) {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="py-10 text-center text-sm text-slate-500">
+        <div className="py-10 text-center text-sm text-neutral-500">
           {entries.length === 0
             ? "No contacts logged yet. Add them from the Log screen."
             : "Nothing matches those filters."}

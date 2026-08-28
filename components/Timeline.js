@@ -56,7 +56,7 @@ export default function Timeline({ subjectType, subjectId, timeline = [] }) {
         <button
           onClick={submitNote}
           disabled={pending || !noteDraft.trim()}
-          className="shrink-0 rounded-md bg-white px-3 text-xs font-medium text-slate-950 transition-colors hover:bg-slate-200 disabled:opacity-50"
+          className="btn-accent shrink-0 rounded-md px-3 text-xs font-medium transition-colors disabled:opacity-50"
         >
           Add
         </button>
@@ -65,7 +65,7 @@ export default function Timeline({ subjectType, subjectId, timeline = [] }) {
       {error && <p className="mb-2 text-xs text-red-400">{error}</p>}
 
       {timeline.length === 0 ? (
-        <p className="text-xs text-slate-600">Nothing logged yet.</p>
+        <p className="text-xs text-neutral-600">Nothing logged yet.</p>
       ) : (
         <div className="max-h-96 space-y-2 overflow-y-auto">
           {timeline.map((item) => {
@@ -74,19 +74,19 @@ export default function Timeline({ subjectType, subjectId, timeline = [] }) {
               <div key={`${item.kind}-${item.id}`} className="flex gap-2 text-sm">
                 <Icon
                   size={12}
-                  className={`mt-1 shrink-0 ${item.kind === "note" ? "text-slate-600" : "text-slate-300"}`}
+                  className={`mt-1 shrink-0 ${item.kind === "note" ? "text-neutral-600" : "link-accent"}`}
                 />
                 <div className="min-w-0">
                   <span
                     className={
                       item.kind === "note"
-                        ? "break-words text-slate-300"
-                        : "break-words italic text-slate-500"
+                        ? "break-words text-neutral-300"
+                        : "break-words italic text-neutral-500"
                     }
                   >
                     {item.label}
                   </span>
-                  <TimeAgo ts={item.created_at} className="ml-2 text-xs text-slate-600" />
+                  <TimeAgo ts={item.created_at} className="ml-2 text-xs text-neutral-600" />
                 </div>
               </div>
             );

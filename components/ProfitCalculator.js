@@ -124,16 +124,16 @@ export default function ProfitCalculator({ brands = [], creators = [], scenarios
 
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border border-slate-800 bg-slate-950 p-4">
+      <div className="rounded-lg border border-neutral-800 bg-neutral-950 p-4">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div className="flex gap-2">
             <ModeToggle value="quick" current={mode} onClick={() => startNewScenario("quick")} label="Quick" />
             <ModeToggle value="advanced" current={mode} onClick={() => startNewScenario("advanced")} label="Advanced" />
           </div>
           {editingScenarioId && (
-            <span className="flex items-center gap-2 text-xs text-slate-300">
+            <span className="flex items-center gap-2 text-xs text-neutral-400">
               Editing &quot;{scenarioName}&quot;
-              <button onClick={cancelEdit} className="underline hover:text-white">
+              <button onClick={cancelEdit} className="link-accent underline">
                 Cancel
               </button>
             </span>
@@ -152,7 +152,7 @@ export default function ProfitCalculator({ brands = [], creators = [], scenarios
         <DealHealthCard health={health} />
       </div>
 
-      <div className="rounded-lg border border-slate-800 bg-slate-950 p-4">
+      <div className="rounded-lg border border-neutral-800 bg-neutral-950 p-4">
         <p className="mb-3 text-sm font-semibold text-white">
           {editingScenarioId ? "Update this scenario" : "Save this scenario"}
         </p>
@@ -187,7 +187,7 @@ export default function ProfitCalculator({ brands = [], creators = [], scenarios
           <button
             onClick={saveScenario}
             disabled={pending}
-            className="rounded-md bg-white px-4 py-2 text-sm font-medium text-slate-950 transition-colors hover:bg-slate-200 disabled:opacity-50"
+            className="btn-accent rounded-md px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50"
           >
             {pending ? "Saving..." : editingScenarioId ? "Update scenario" : "Save scenario"}
           </button>
@@ -195,7 +195,7 @@ export default function ProfitCalculator({ brands = [], creators = [], scenarios
         </div>
       </div>
 
-      <div className="rounded-lg border border-slate-800 bg-slate-950 p-4">
+      <div className="rounded-lg border border-neutral-800 bg-neutral-950 p-4">
         <p className="mb-3 text-sm font-semibold text-white">Saved scenarios</p>
         <ScenariosList
           scenarios={scenarios}
@@ -207,7 +207,7 @@ export default function ProfitCalculator({ brands = [], creators = [], scenarios
       </div>
 
       {selectedIds.size > 0 && (
-        <div className="rounded-lg border border-slate-800 bg-slate-950 p-4">
+        <div className="rounded-lg border border-neutral-800 bg-neutral-950 p-4">
           <p className="mb-3 text-sm font-semibold text-white">Comparison</p>
           <ComparisonTable scenarios={selectedScenarios} />
         </div>
@@ -222,7 +222,7 @@ function ModeToggle({ value, current, onClick, label }) {
     <button
       onClick={onClick}
       className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
-        active ? "bg-slate-700 text-white" : "border border-slate-800 bg-slate-900 text-slate-500"
+        active ? "bg-neutral-700 text-white" : "border border-neutral-800 bg-neutral-900 text-neutral-500"
       }`}
     >
       {label}
